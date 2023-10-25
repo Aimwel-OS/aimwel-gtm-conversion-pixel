@@ -15,5 +15,5 @@
 homepage: "https://www.aimwel.com"
 documentation: "https://www.aimwel.com"
 versions:
-  - sha: 5f02a788b90ae804f86b04aa24af8937e567874a
+  - sha: 99a9585be36dcad22bef9f0db8d8379968e2e430
     changeNotes: Initial Version
