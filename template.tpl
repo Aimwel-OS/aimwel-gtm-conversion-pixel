@@ -327,7 +327,7 @@ data.channelParameters.forEach(function(element){
 });
 
 // Remove trailing ampersand
-url = url.substring(0, url.length - 1);
+url = url.slice(0, -1);
 
 log(url);
 
@@ -394,14 +394,6 @@ scenarios:
     // Verify that the tag finished successfully.
     assertApi('sendPixel').wasCalled(1);
 setup: |-
-  // const getTimestampMillis = require('getTimestampMillis');
-  // var currentTimestampInMilliseconds = getTimestampMillis();
-  const log = require('logToConsole');
-
-  //const mockEndpointInput = 'https://4ij56spaka.execute-api.eu-west-1.amazonaws.com/dev/?timestamp=' + currentTimestampInMilliseconds + '&';
-
-  //log(mockEndpointInput);
-
   const mockData = {
     aimwel_api_endpoint: 'https://4ij56spaka.execute-api.eu-west-1.amazonaws.com/dev/',
     utmParameters: [{
@@ -446,4 +438,4 @@ setup: |-
 
 ___NOTES___
 
-Created on 25/10/2023, 17:32:24
+Created on 25/10/2023, 21:11:12
