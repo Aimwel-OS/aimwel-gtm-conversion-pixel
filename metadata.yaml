@@ -13,7 +13,7 @@
 # limitations under the License.
 
 homepage: "https://www.aimwel.com"
-documentation: [README](../blob/main/README.md)
+documentation: <a href="../blob/main/README.md">README</a>
 versions:
   # Latest version
   - sha: 6511390bf6799e91de43c902b213f09d40f8981a
