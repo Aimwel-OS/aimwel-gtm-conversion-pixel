@@ -13,15 +13,19 @@
 # limitations under the License.
 
 homepage: "https://www.aimwel.com"
-documentation: "https://www.aimwel.com" # Will be added soon!
+documentation: [README](readme.md) # Will be added soon!
 versions:
   # Latest version
+  - sha: 6511390bf6799e91de43c902b213f09d40f8981a
+    changeNotes: |2
+      Optimised code
+      Adjusted field names
+  # Older versions
   - sha: b74f06359e8b92bd058cbeaa4ef35c14eb18aad9
     changeNotes: |2
       Improved field options and feedback
       Added more tests
       Corrected sendpixel response
-      Optimized code 
-  # Older versions
+      Optimized code
   - sha: 99a9585be36dcad22bef9f0db8d8379968e2e430
     changeNotes: Initial Version
