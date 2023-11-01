@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
-  - sha: 6511390bf6799e91de43c902b213f09d40f8981a
+  - sha: 1122b38a4184463138ae48f4d13855a8c0fc41b0
     changeNotes: |2
       Optimised code
       Adjusted field names
