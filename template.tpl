@@ -50,133 +50,62 @@ ___TEMPLATE_PARAMETERS___
       }
     ],
     "help": "Please enter the provided Aimwel endpoint URL in this field",
-    "notSetText": "Please add the endpoint URL to this field"
+    "notSetText": "Please add the endpoint URL to this field",
+    "valueHint": "{{client name}}.t2.aimwel.com"
+  },
+  {
+    "type": "TEXT",
+    "name": "ga4_measurement_id",
+    "displayName": "GA4 Measurement/stream Id",
+    "simpleValueType": true,
+    "valueHint": "Starts with \u0027G-\u0027",
+    "valueValidators": [
+      {
+        "type": "NON_EMPTY",
+        "errorMessage": "Please provide the GA4 measurement ID"
+      },
+      {
+        "type": "REGEX",
+        "args": [
+          "^G-"
+        ],
+        "errorMessage": "GA4 measurement/stream Id must start with \u0027G-\u0027",
+        "enablingConditions": []
+      }
+    ]
+  },
+  {
+    "type": "RADIO",
+    "name": "event_type",
+    "displayName": "Event Type",
+    "radioItems": [
+      {
+        "value": "apply",
+        "displayValue": "Apply click"
+      },
+      {
+        "value": "view",
+        "displayValue": "Job view"
+      },
+      {
+        "value": "finished_apply",
+        "displayValue": "Finished apply"
+      }
+    ],
+    "simpleValueType": true,
+    "help": "Please select the applicable event type",
+    "valueValidators": [
+      {
+        "type": "NON_EMPTY",
+        "errorMessage": "A choice is required"
+      }
+    ]
   },
   {
     "type": "GROUP",
     "name": "parameters",
     "displayName": "Parameters",
     "subParams": [
-      {
-        "type": "SIMPLE_TABLE",
-        "name": "utmParameters",
-        "simpleTableColumns": [
-          {
-            "defaultValue": "",
-            "displayName": "UTM parameter name",
-            "name": "key",
-            "type": "SELECT",
-            "selectItems": [
-              {
-                "value": "utm_source",
-                "displayValue": "UTM Source"
-              },
-              {
-                "value": "utm_medium",
-                "displayValue": "UTM Medium"
-              },
-              {
-                "value": "utm_campaign",
-                "displayValue": "UTM Campaign"
-              },
-              {
-                "value": "utm_content",
-                "displayValue": "UTM Content"
-              },
-              {
-                "value": "utm_term",
-                "displayValue": "UTM Term"
-              }
-            ],
-            "isUnique": true,
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
-          },
-          {
-            "defaultValue": "",
-            "displayName": "UTM parameter value",
-            "name": "value",
-            "type": "TEXT",
-            "isUnique": true,
-            "valueHint": "Select the UTM URL query variables which contain the corresponding required parameters",
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
-          }
-        ],
-        "notSetText": "Please select the required UTM parameter from the drop-down list",
-        "help": "In this section you can add the UTM parameters that should be included in the conversion event",
-        "valueValidators": [
-          {
-            "type": "NON_EMPTY",
-            "errorMessage": "A value for this field is required",
-            "enablingConditions": []
-          }
-        ],
-        "displayName": "UTM parameters",
-        "alwaysInSummary": true,
-        "newRowButtonText": "Add UTM parameter"
-      },
-      {
-        "type": "SIMPLE_TABLE",
-        "name": "aimwelParameters",
-        "displayName": "Aimwel parameters",
-        "simpleTableColumns": [
-          {
-            "defaultValue": "",
-            "displayName": "Aimwel parameter name",
-            "name": "key",
-            "type": "SELECT",
-            "selectItems": [
-              {
-                "value": "aw_bid_configuration_id",
-                "displayValue": "Aimwel Bid Configuration Id"
-              },
-              {
-                "value": "aw_campaign_id",
-                "displayValue": "Aimwel Campaign Id"
-              },
-              {
-                "value": "aw_settings_id",
-                "displayValue": "Aimwel Settings Id"
-              }
-            ],
-            "isUnique": true,
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
-          },
-          {
-            "defaultValue": "",
-            "displayName": "Aimwel parameter value",
-            "name": "value",
-            "type": "TEXT",
-            "isUnique": true,
-            "valueHint": "Select the Aimwel URL query variables which contain the corresponding required parameters",
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
-          }
-        ],
-        "help": "In this section you can add the Aimwel parameters that should be included in the conversion event",
-        "valueValidators": [
-          {
-            "type": "NON_EMPTY"
-          }
-        ],
-        "notSetText": "Please select the required Aimwel parameter from the drop-down list",
-        "alwaysInSummary": true,
-        "newRowButtonText": "Add Aimwel parameter"
-      },
       {
         "type": "SIMPLE_TABLE",
         "name": "platformParameters",
@@ -195,14 +124,6 @@ ___TEMPLATE_PARAMETERS___
               {
                 "value": "brand",
                 "displayValue": "Brand"
-              },
-              {
-                "value": "event_type",
-                "displayValue": "Event Type"
-              },
-              {
-                "value": "session_id",
-                "displayValue": "Session Id"
               }
             ],
             "isUnique": true,
@@ -235,53 +156,6 @@ ___TEMPLATE_PARAMETERS___
         ],
         "alwaysInSummary": true,
         "newRowButtonText": "Add platform parameter"
-      },
-      {
-        "type": "SIMPLE_TABLE",
-        "name": "channelParameters",
-        "displayName": "Channel parameters",
-        "simpleTableColumns": [
-          {
-            "defaultValue": "",
-            "displayName": "Channel parameter name",
-            "name": "key",
-            "type": "SELECT",
-            "selectItems": [
-              {
-                "value": "chan_ref",
-                "displayValue": "Channel reference"
-              }
-            ],
-            "isUnique": true,
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
-          },
-          {
-            "defaultValue": "",
-            "displayName": "Channel parameter value",
-            "name": "value",
-            "type": "TEXT",
-            "isUnique": true,
-            "valueHint": "Select the unique identifier used by aggregators, social platforms and display networks",
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
-          }
-        ],
-        "notSetText": "Please select the required channel parameter from the drop-down list",
-        "help": "In this section you can add the channel parameter(s) that should be included in the conversion event",
-        "valueValidators": [
-          {
-            "type": "NON_EMPTY"
-          }
-        ],
-        "alwaysInSummary": true,
-        "newRowButtonText": "Add channel parameter"
       }
     ],
     "groupStyle": "NO_ZIPPY"
@@ -292,37 +166,65 @@ ___TEMPLATE_PARAMETERS___
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 // Required necessary APIs
+const getUrl = require('getUrl');
 const log = require('logToConsole');
 const sendPixel = require('sendPixel');
 const encodeUri = require('encodeUri');
-const encodeUriComponent = require('encodeUriComponent');
+const setCookie = require('setCookie');
+const getCookie = require('getCookieValues');
 const getTimestampMillis = require('getTimestampMillis');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
-// Function to append parameters to the URL
-function appendParameters(url, parameters) {
-  parameters.forEach((element) => {
-    if (element.key !== undefined && element.value !== undefined) {
-    url += encodeUriComponent(element.key) + '=' + encodeUriComponent(element.value) + '&';
-  } else {
-    log('Parameter name or value is undefined, please check');
-  }
-});
+// Set cookie names
+const userCookieName = '_ga';
+const sessionCookieName = '_ga_' + data.ga4_measurement_id.slice(2);
+const urlParamsCookieName = '_aimwel';
 
-return url;
+// Get query params
+const urlQuery = getUrl('query');
+
+const options = {
+  domain: 'auto',
+  path: '/',
+  encode: 'false',
+  SameSite: 'None',
+  Secure: true
+};
+
+// Set query params as cookie
+setCookie(urlParamsCookieName, urlQuery, options);
+
+let sessionId = "";
+
+// Call getCookieValues API to retrieve cookie values and return first element
+const userCookieValue = getCookie(userCookieName)[0];
+const sessionCookieValue = getCookie(sessionCookieName)[0];
+
+if (userCookieValue && sessionCookieValue) {
+  const splitUserCookieValue = userCookieValue.split('.');
+  const splitSessionCookieValue = sessionCookieValue.split('.');
+
+  if (splitUserCookieValue.length == 4 && splitSessionCookieValue.length == 9) {
+    sessionId = splitUserCookieValue[2] + "." + splitUserCookieValue[3] + "." + splitSessionCookieValue[2];
+  } else {
+    log('Cookie value segment length mismatch, please check cookie structure');
+  }
+} else {
+    log('Cookie value(s) missing, check if cookies exist');
 }
 
+const urlParams = getCookie(urlParamsCookieName)[0];
+
 // Adding query string in URL and adding non-optional timestamp query parameter
-let url = encodeUri(data.aimwel_api_endpoint) + '?timestamp=' + currentTimestampInMilliseconds + '&';
-
-// Append parameters per field section 
-url = appendParameters(url, data.utmParameters);
-url = appendParameters(url, data.aimwelParameters);
-url = appendParameters(url, data.platformParameters);
-url = appendParameters(url, data.channelParameters);
-
-// Remove trailing ampersand
-url = url.slice(0, -1);
+let url = encodeUri(data.aimwel_api_endpoint) + '?timestamp=' +
+    currentTimestampInMilliseconds +
+    '&' +
+    'session_id=' +
+    sessionId +
+    '&' +
+    'event_type=' +
+    data.event_type +
+    '&' + urlParams;
 
 // Send GET request
 sendPixel(url, data.gtmOnSuccess(), data.gtmOnFailure());
@@ -372,6 +274,131 @@ ___WEB_PERMISSIONS___
       "isEditedByUser": true
     },
     "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "get_cookies",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "cookieAccess",
+          "value": {
+            "type": 1,
+            "string": "any"
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "get_url",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "queriesAllowed",
+          "value": {
+            "type": 1,
+            "string": "any"
+          }
+        },
+        {
+          "key": "urlParts",
+          "value": {
+            "type": 1,
+            "string": "specific"
+          }
+        },
+        {
+          "key": "query",
+          "value": {
+            "type": 8,
+            "boolean": true
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "set_cookies",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "allowedCookies",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "name"
+                  },
+                  {
+                    "type": 1,
+                    "string": "domain"
+                  },
+                  {
+                    "type": 1,
+                    "string": "path"
+                  },
+                  {
+                    "type": 1,
+                    "string": "secure"
+                  },
+                  {
+                    "type": 1,
+                    "string": "session"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "any"
+                  },
+                  {
+                    "type": 1,
+                    "string": "session"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
   }
 ]
 
@@ -397,55 +424,20 @@ scenarios:
   code: |-
     runCode(mockData);
 
-    assertApi('logToConsole').wasCalled();
+    assertApi('getUrl').wasCalled();
+    assertApi('setCookie').wasCalled();
     assertApi('encodeUri').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('logToConsole').wasCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('getCookieValues').wasCalled();
     assertApi('encodeUriComponent').wasCalled();
     assertApi('getTimestampMillis').wasCalled();
-    assertApi('sendPixel').wasCalled();
-    assertApi('gtmOnSuccess').wasCalled();
-setup: |-
-  const mockData = {
-    aimwel_api_endpoint: 'https://4ij56spaka.execute-api.eu-west-1.amazonaws.com/dev/',
-    utmParameters: [{
-      upn: 'utm_source',
-      upv: 'foo'
-    },{
-      upn: 'utm_medium',
-      upv: 'bar'
-    },{
-      upn: 'utm_campaign',
-      upv: 'baz'
-    }],
-    aimwelParameters: [{
-      apn: 'aw_bid_configuration_id',
-      apv: 'aaa'
-    },{
-      apn: 'aw_settings_id',
-      apv: 'bbb'
-    },{
-      apn: 'aw_campaign_id',
-      apv: 'ccc'
-    }],
-    platformParameters: [{
-      ppn: 'job_id',
-      ppv: '112233'
-    },{
-      ppn: 'event_type',
-      ppv: 'apply'
-    },{
-      ppn: 'brand',
-      ppv: 'aimwel'
-    },{
-      ppn: 'session_id',
-      ppv: '123'
-    }],
-    channelParameters: [{
-      cpn: 'chan_ref',
-      cpv: '1a2b3c'
-    }]
-  };
+setup: ''
 
 
 ___NOTES___
 
 Created on 01/11/2023, 16:22:29
+
+

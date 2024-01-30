@@ -16,11 +16,18 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
+  - sha: b74f06359e8b92bd058cbeaa4ef35c14eb18aad9
+    changeNotes: |2
+      Refactored template code to optimise and reduce code
+      Reduced input fields; no longer required due to code optimisations
+      Added session Id value based on GA4 cookie logic
+      Query parameter passthrough; individual query param processing no longer needed
+      Refactored permissions to reflect changes
+  # Older versions
   - sha: 1122b38a4184463138ae48f4d13855a8c0fc41b0
     changeNotes: |2
       Optimised code
       Adjusted field names
-  # Older versions
   - sha: b74f06359e8b92bd058cbeaa4ef35c14eb18aad9
     changeNotes: |2
       Improved field options and feedback

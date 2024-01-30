@@ -15,17 +15,17 @@ The conversion/tracking pixel is designed to work with Google Tag Manager. It is
 
 1. **GTM Implementation**: Ensure that you have set up Google Tag Manager on your website. If you haven't, refer to GTM's official documentation for instructions.
 
-2. **Community Template Gallery**: This pixel utilizes the GTM Community Template Gallery. You can find and select the appropriate tag template from the gallery to track your desired events, such as Apply Click and Page View.
+2. **Community Template Gallery**: This pixel utilizes the GTM Community Template Gallery. You can find and select the appropriate tag template from the gallery to track your desired events, such as an Apply Click and/or Job View.
 
-3. **Configuration**: In the selected tag's settings, configure the tag by providing the required input fields, including any query parameters. These query parameters are essential for tracking the conversions correctly.
+3. **Configuration**: In the selected tag's settings, configure the tag by providing the required input fields, the API endpoint will be provided by Aimwel, the GA4 measurement/stream Id can be found in the Admin section in Google Analytics 4 by navigating to 'Data collection and modification' -> 'Data streams' and selecting the appropriate stream.
 
-4. **Variables for Query Parameters**: If you haven't already created variables for query parameters in GTM, follow the instructions in this repository to create the necessary variables that capture query parameters from the URL.
+4. **Variables for Platform Parameters**: If you haven't already created variables for the platform parameters originating from your platform in GTM, please do so. The job Id and brand values have to come from your platform and must be included in the conversion events by means of the platform parameters.
 
-5. **Set Up Triggers**: Create triggers in GTM that specify when the tags should fire. For Apply Click, create a trigger that activates when the user applies a click. For Page View, create a trigger that activates when the container is loaded or when a dedicated dataLayer push event occurs.
+5. **Set Up Triggers**: Create triggers in GTM that specify when the tags should fire. For Apply Click, create a trigger that activates when the user does a apply click. For Job View, create a trigger that activates when the container is loaded or when a dedicated dataLayer push event occurs.
 
-6. **Testing**: Before publishing the changes, use GTM's Preview and Debug mode to test that the tags fire correctly. Verify that the tag fires as expected and that the query parameters are captured accurately.
+6. **Testing**: Before publishing the changes, use GTM's Preview mode to test that the tags fire correctly. Verify that the tag fires as expected and that the GET requeste made to our endpoint has all parameters. Session Id, Event Type, Job Id and Timestamp are required. Session Id and timestamp are filled in by the template automatically.
 
-7. **Publish the Container**: Once you've thoroughly tested your configuration, click on "Submit" in GTM to publish the container with the new tags and triggers.
+7. **Publish the Container**: Once you've thoroughly tested your configuration, click on "Submit" in GTM to publish the container with the new tags and triggers. If you're unsure when publishing, feel free to contact Aimwel for support.
 
 ## Integration Guide
 
@@ -33,9 +33,9 @@ Developers can easily integrate the conversion/tracking pixel into your website 
 
 1. **Implement GTM Snippet**: Ensure that the GTM snippet is correctly implemented in your website's code. The snippet typically needs to be added to your website's header.
 
-2. **Configure the Tag**: In Google Tag Manager, create a new tag based on the template from the Community Template Gallery. Fill in the necessary query parameters based on your conversion tracking requirements.
+2. **Configure the Tag**: In Google Tag Manager, create a new tag based on the template from the Community Template Gallery. Fill in the necessary platform parameters to provide us with the Job Id and Brand for which the conversion has been made.
 
-3. **Create Variables**: If query parameter variables do not exist, create them in GTM to capture query parameters from the URL.
+3. **Create Variables**: If platform parameter variables do not exist, create them in GTM so they can be added to the conversion event utilising the community template.
 
 4. **Set Up Triggers**: Create triggers in GTM that specify when the tags should fire, depending on the events you want to track.
 
