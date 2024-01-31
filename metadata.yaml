@@ -18,11 +18,11 @@ versions:
   # Latest version
   - sha: 9c3d9ecfe118a66dcc2d621a79ad31e00189cf3a
     changeNotes: |2
-      Refactored template code to optimise and reduce code
-      Reduced input fields; no longer required due to code optimisations
-      Added session Id value based on GA4 cookie logic
-      Query parameter passthrough; individual query param processing no longer needed
-      Refactored permissions to reflect changes
+      1. Refactored template code to optimise and reduce code.
+      2. Reduced input fields; no longer required due to code optimisations.
+      3. Added session Id value based on GA4 cookie logic.
+      4. Query parameter passthrough; individual query param processing no longer needed.
+      5. Refactored permissions to reflect changes.
   # Older versions
   - sha: 1122b38a4184463138ae48f4d13855a8c0fc41b0
     changeNotes: |2
