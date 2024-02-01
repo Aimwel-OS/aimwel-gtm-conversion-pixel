@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
-  - sha: 9c3d9ecfe118a66dcc2d621a79ad31e00189cf3a
+  - sha: d30412388cc9e759d893bbe78cd28fd88c7b6130
     changeNotes: |2
       1. Refactored template code to optimise and reduce code.
       2. Reduced input fields; no longer required due to code optimisations.
