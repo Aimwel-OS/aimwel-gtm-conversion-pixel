@@ -172,6 +172,7 @@ const sendPixel = require('sendPixel');
 const encodeUri = require('encodeUri');
 const setCookie = require('setCookie');
 const getCookie = require('getCookieValues');
+const encodeUriComponent = require('encodeUriComponent');
 const getTimestampMillis = require('getTimestampMillis');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
@@ -215,6 +216,19 @@ if (userCookieValue && sessionCookieValue) {
 
 const urlParams = getCookie(urlParamsCookieName)[0];
 
+// Function to append parameters to the URL
+function appendParameters(url, parameters) {
+  parameters.forEach((element) => {
+    if (element.key !== undefined && element.value !== undefined) {
+    url += encodeUriComponent(element.key) + '=' + encodeUriComponent(element.value) + '&';
+  } else {
+    log('Parameter name or value is undefined, please check');
+  }
+});
+
+return url;
+}
+
 // Adding query string in URL and adding non-optional timestamp query parameter
 let url = encodeUri(data.aimwel_api_endpoint) + '?timestamp=' +
     currentTimestampInMilliseconds +
@@ -223,8 +237,12 @@ let url = encodeUri(data.aimwel_api_endpoint) + '?timestamp=' +
     sessionId +
     '&' +
     'event_type=' +
-    data.event_type +
-    '&' + urlParams;
+    data.event_type + 
+    '&';
+
+url = appendParameters(url, data.platformParameters);
+
+url += urlParams;
 
 // Send GET request
 sendPixel(url, data.gtmOnSuccess(), data.gtmOnFailure());
