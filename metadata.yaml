@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
-  - sha: 9aab41e6dedb451f96db0c9c92bad540a814f099
+  - sha: 88e19d6c305a05bd8a340998cfd5b8ad9efe762d
     changeNotes: |2
       Refactored entire tag to/for:
       1. Fix bug that caused issues with session cookies causing tag to fail
