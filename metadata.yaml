@@ -18,8 +18,17 @@ versions:
   # Latest version
   - sha: 9aab41e6dedb451f96db0c9c92bad540a814f099
     changeNotes: |2
-      Fixed error in measurement Id validation
+      Refactored entire tag to/for:
+      1. Fix bug that caused issues with session cookies causing tag to fail
+      2. Remove dependancy on Google Analytics 4 session logic
+      3. Introduce built-in session logic
+      4. Set cookie under specific conditions
+      5. Improve samesite cookie logic
+      6. Remove GA4 measurement Id field from interface
   # Older versions
+  - sha: 9aab41e6dedb451f96db0c9c92bad540a814f099
+    changeNotes: |2
+      Fixed error in measurement Id validation
   - sha: d30412388cc9e759d893bbe78cd28fd88c7b6130
     changeNotes: |2
       1. Refactored template code to optimise and reduce code.

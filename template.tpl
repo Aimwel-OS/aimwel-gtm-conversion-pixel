@@ -54,19 +54,6 @@ ___TEMPLATE_PARAMETERS___
     "valueHint": "{{client name}}.t2.aimwel.com"
   },
   {
-    "type": "TEXT",
-    "name": "ga4_measurement_id",
-    "displayName": "GA4 Measurement/stream Id",
-    "simpleValueType": true,
-    "valueHint": "Starts with \u0027G-\u0027",
-    "valueValidators": [
-      {
-        "type": "NON_EMPTY",
-        "errorMessage": "Please provide the GA4 measurement ID"
-      }
-    ]
-  },
-  {
     "type": "RADIO",
     "name": "event_type",
     "displayName": "Event Type",
@@ -164,60 +151,30 @@ const sendPixel = require('sendPixel');
 const encodeUri = require('encodeUri');
 const setCookie = require('setCookie');
 const getCookie = require('getCookieValues');
+const generateRandom = require('generateRandom');
 const encodeUriComponent = require('encodeUriComponent');
 const getTimestampMillis = require('getTimestampMillis');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
-// Set cookie names
-const userCookieName = '_ga';
+// Set cookie name
 const urlParamsCookieName = '_aimwel';
 
-let sessionCookieName;
-log(data.ga4_measurement_id);
-
-// Cannot use regex or startsWith for string comparison, resorting to ugly measures
-if (data.ga4_measurement_id[0] === 'G' && data.ga4_measurement_id[1] === '-'){ 
-  const sessionCookieName = '_ga_' + data.ga4_measurement_id.replace('G-', '');
-} else {
-  log('Google Analytics 4 measurement Id does not start with "G-", please provide full Id');
-}
-
-log(sessionCookieName);
+// Set parameter name
+const awId = 'aw_id';
 
 // Get query params
 const urlQuery = getUrl('query');
 
-const options = {
-  domain: 'auto',
-  path: '/',
-  encode: 'false',
-  SameSite: 'None',
-  Secure: true
-};
-
-// Set query params as cookie
-setCookie(urlParamsCookieName, urlQuery, options);
-
-let sessionId = "";
-
-// Call getCookieValues API to retrieve cookie values and return first element
-const userCookieValue = getCookie(userCookieName)[0];
-const sessionCookieValue = getCookie(sessionCookieName)[0];
-
-if (userCookieValue && sessionCookieValue) {
-  const splitUserCookieValue = userCookieValue.split('.');
-  const splitSessionCookieValue = sessionCookieValue.split('.');
-
-  if (splitUserCookieValue.length == 4 && splitSessionCookieValue.length == 9) {
-    sessionId = splitUserCookieValue[2] + "." + splitUserCookieValue[3] + "." + splitSessionCookieValue[2];
-  } else {
-    log('Cookie value segment length mismatch, please check cookie structure');
-  }
-} else {
-    log('Cookie value(s) missing, check if cookies exist');
+// Set query params with sessionId as cookie
+if ((urlQuery.indexOf(awId) !== -1) && (data.event_type == 'view')){
+  const randomNumber = currentTimestampInMilliseconds + '.' + generateRandom(0,100);
+  setCookie(urlParamsCookieName,'session_id=' + randomNumber + '&' + urlQuery, {
+    domain: 'auto', 
+    path: '/', 
+    encode: false, 
+    samesite: 'none', 
+    secure: true});
 }
-
-const urlParams = getCookie(urlParamsCookieName)[0];
 
 // Function to append parameters to the URL
 function appendParameters(url, parameters) {
@@ -225,19 +182,19 @@ function appendParameters(url, parameters) {
     if (element.key !== undefined && element.value !== undefined) {
     url += encodeUriComponent(element.key) + '=' + encodeUriComponent(element.value) + '&';
   } else {
-    log('Parameter name or value is undefined, please check');
+    log('Platform parameter name or value is undefined, please check');
   }
 });
 
 return url;
 }
 
-// Adding query string in URL and adding non-optional timestamp query parameter
+// Get URL params and sessionId from cookie
+const urlParams = getCookie(urlParamsCookieName)[0];
+
+// Adding query string, required and platform parameters to URL
 let url = encodeUri(data.aimwel_api_endpoint) + '?timestamp=' +
     currentTimestampInMilliseconds +
-    '&' +
-    'session_id=' +
-    sessionId +
     '&' +
     'event_type=' +
     data.event_type + 
@@ -247,8 +204,10 @@ url = appendParameters(url, data.platformParameters);
 
 url += urlParams;
 
-// Send GET request
-sendPixel(url, data.gtmOnSuccess(), data.gtmOnFailure());
+// Send GET request if aimwel cookie exists
+if (urlParams){
+  sendPixel(url, data.gtmOnSuccess(), data.gtmOnFailure());
+}
 
 
 ___WEB_PERMISSIONS___
