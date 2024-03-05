@@ -16,6 +16,10 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
+  - sha: 25747473e88344da8f807a84e0ca9fcb64f5a15c
+    changeNotes: |2
+      Added version parameter to template
+  # Older versions
   - sha: 88e19d6c305a05bd8a340998cfd5b8ad9efe762d
     changeNotes: |2
       Refactored entire tag to/for:
@@ -25,7 +29,6 @@ versions:
       4. Set cookie under specific conditions
       5. Improve samesite cookie logic
       6. Remove GA4 measurement Id field from interface
-  # Older versions
   - sha: 9aab41e6dedb451f96db0c9c92bad540a814f099
     changeNotes: |2
       Fixed error in measurement Id validation

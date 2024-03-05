@@ -157,7 +157,7 @@ const getTimestampMillis = require('getTimestampMillis');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
 // Template Version
-const templateGitHubVersion = '88e19d6';
+const templateGitHubVersion = '2574747';
 
 // Set cookie name
 const urlParamsCookieName = '_aimwel';
