@@ -156,6 +156,9 @@ const encodeUriComponent = require('encodeUriComponent');
 const getTimestampMillis = require('getTimestampMillis');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
+// Template Version
+const templateGitHubVersion = '88e19d6';
+
 // Set cookie name
 const urlParamsCookieName = '_aimwel';
 
@@ -195,6 +198,9 @@ const urlParams = getCookie(urlParamsCookieName)[0];
 // Adding query string, required and platform parameters to URL
 let url = encodeUri(data.aimwel_api_endpoint) + '?timestamp=' +
     currentTimestampInMilliseconds +
+    '&' +
+    'v=' +
+    templateGitHubVersion +
     '&' +
     'event_type=' +
     data.event_type + 
