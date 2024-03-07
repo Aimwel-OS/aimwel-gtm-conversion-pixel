@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
-  - sha: 25747473e88344da8f807a84e0ca9fcb64f5a15c
+  - sha: 30c879dd2db16500975980e40be667031fc90c27
     changeNotes: |2
       Added version parameter to template
   # Older versions
