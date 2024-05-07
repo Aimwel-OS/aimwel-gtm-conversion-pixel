@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
-  - sha: f7e4dac1fea75d4db25ab07632b6d5690bc8c1e1
+  - sha: 548224e15ca2158b33096749f85e1d18d5f810ad
     changeNotes: |2
       1. Refactored entire session and parameter logic to facilitate all scenarios
       2. Introduced traffic scoping toggle and logic to allow all or only Aimwel conversion forwarding
