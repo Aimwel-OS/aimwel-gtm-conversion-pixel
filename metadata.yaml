@@ -16,10 +16,18 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
+  - sha: xxx
+    changeNotes: |2
+      1. Refactored entire session and parameter logic to facilitate all scenarios
+      2. Introduced traffic scoping toggle and logic to allow all or only Aimwel conversion forwarding
+      3. Introduced test endpoint toogle in the template for real-time debugging feedback
+      4. Added debugging logging feature to enable verbose browser console logging
+      5. Removed unused UI features and optimised code
+      TODO: Update unit and integration tests
+  # Older versions
   - sha: 30c879dd2db16500975980e40be667031fc90c27
     changeNotes: |2
       Added version parameter to template
-  # Older versions
   - sha: 88e19d6c305a05bd8a340998cfd5b8ad9efe762d
     changeNotes: |2
       Refactored entire tag to/for:

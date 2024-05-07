@@ -35,7 +35,7 @@ ___TEMPLATE_PARAMETERS___
   {
     "type": "TEXT",
     "name": "aimwel_api_endpoint",
-    "displayName": "Aimwel Endpoint URL (provided by Aimwel)",
+    "displayName": "Aimwel API Endpoint URL (provided by Aimwel)",
     "simpleValueType": true,
     "valueValidators": [
       {
@@ -49,9 +49,10 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY"
       }
     ],
-    "help": "Please enter the provided Aimwel endpoint URL in this field",
-    "notSetText": "Please add the endpoint URL to this field",
-    "valueHint": "{{client name}}.t2.aimwel.com"
+    "help": "Please enter the provided Aimwel API endpoint URL in this field",
+    "notSetText": "Please add the API endpoint URL to this field",
+    "valueHint": "https://{{client name}}.t2.aimwel.com",
+    "alwaysInSummary": true
   },
   {
     "type": "RADIO",
@@ -81,63 +82,93 @@ ___TEMPLATE_PARAMETERS___
     ]
   },
   {
-    "type": "GROUP",
-    "name": "parameters",
-    "displayName": "Parameters",
-    "subParams": [
+    "type": "RADIO",
+    "name": "traffic_scope",
+    "displayName": "Traffic scoping",
+    "radioItems": [
       {
-        "type": "SIMPLE_TABLE",
-        "name": "platformParameters",
-        "displayName": "Platform parameters",
-        "simpleTableColumns": [
+        "value": "all",
+        "displayValue": "All traffic"
+      },
+      {
+        "value": "aimwel",
+        "displayValue": "Aimwel traffic"
+      }
+    ],
+    "simpleValueType": true,
+    "help": "Select a option to either send all performance conversion events to the endpoint or only Aimwel events. Default is all traffic (as per Aimwel guidelines).",
+    "defaultValue": "all"
+  },
+  {
+    "type": "CHECKBOX",
+    "name": "test",
+    "checkboxText": "Enable testing template",
+    "simpleValueType": true,
+    "displayName": "Template testing feature",
+    "help": "Select this option to enable the template conversion event testing feature. Test conversion can be viewed here: https://try-tapi.aimwel.com/results.html. Please enter your API endpoint URL (example: https://\u003cclient_name\u003e.t2.aimwel.com) as input into the input field and click the \u0027Load Data\u0027 button.",
+    "defaultValue": false,
+    "alwaysInSummary": true
+  },
+  {
+    "type": "CHECKBOX",
+    "name": "debug",
+    "checkboxText": "Enable logging to console",
+    "simpleValueType": true,
+    "displayName": "Logging for debugging",
+    "help": "Enable this option to see logging messages in the browser\u0027s console for easy configuration debugging",
+    "alwaysInSummary": true,
+    "defaultValue": false
+  },
+  {
+    "type": "SIMPLE_TABLE",
+    "name": "platformParameters",
+    "displayName": "Platform parameters",
+    "simpleTableColumns": [
+      {
+        "defaultValue": "",
+        "displayName": "Platform parameter name",
+        "name": "key",
+        "type": "SELECT",
+        "selectItems": [
           {
-            "defaultValue": "",
-            "displayName": "Platform parameter name",
-            "name": "key",
-            "type": "SELECT",
-            "selectItems": [
-              {
-                "value": "job_id",
-                "displayValue": "Job Id"
-              },
-              {
-                "value": "brand",
-                "displayValue": "Brand"
-              }
-            ],
-            "isUnique": true,
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
+            "value": "job_id",
+            "displayValue": "Job Id"
           },
           {
-            "defaultValue": "",
-            "displayName": "Platform parameter value",
-            "name": "value",
-            "type": "TEXT",
-            "isUnique": true,
-            "valueHint": "Select the (datalayer) variables which contain the required platform parameters",
-            "valueValidators": [
-              {
-                "type": "NON_EMPTY"
-              }
-            ]
+            "value": "brand",
+            "displayValue": "Brand"
           }
         ],
-        "notSetText": "Please select the required platform parameter from the drop-down list",
-        "help": "In this section you can add your platform parameters that should be included in the conversion event",
+        "isUnique": true,
         "valueValidators": [
           {
             "type": "NON_EMPTY"
           }
-        ],
-        "alwaysInSummary": true,
-        "newRowButtonText": "Add platform parameter"
+        ]
+      },
+      {
+        "defaultValue": "",
+        "displayName": "Platform parameter value",
+        "name": "value",
+        "type": "TEXT",
+        "valueHint": "Select the (datalayer) variables which contain the required platform parameters",
+        "isUnique": true,
+        "valueValidators": [
+          {
+            "type": "NON_EMPTY"
+          }
+        ]
       }
     ],
-    "groupStyle": "NO_ZIPPY"
+    "newRowButtonText": "Click to add platform parameter(s)",
+    "help": "In this section you can add the platform parameters that should be included in the conversion event",
+    "notSetText": "Please select the necessary platform parameter from the drop-down list.",
+    "alwaysInSummary": true,
+    "valueValidators": [
+      {
+        "type": "NON_EMPTY"
+      }
+    ]
   }
 ]
 
@@ -146,11 +177,11 @@ ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 // Required necessary APIs
 const getUrl = require('getUrl');
-const log = require('logToConsole');
 const sendPixel = require('sendPixel');
 const encodeUri = require('encodeUri');
 const setCookie = require('setCookie');
 const getCookie = require('getCookieValues');
+const logToConsole = require('logToConsole');
 const generateRandom = require('generateRandom');
 const encodeUriComponent = require('encodeUriComponent');
 const getTimestampMillis = require('getTimestampMillis');
@@ -159,60 +190,137 @@ const currentTimestampInMilliseconds = getTimestampMillis();
 // Template Version
 const templateGitHubVersion = '2574747';
 
-// Set cookie name
-const urlParamsCookieName = '_aimwel';
+// Assign data fields to variables
+const apiEndpoint = data.aimwel_api_endpoint;
+const eventType = data.event_type;
+const trafficScope = data.traffic_scope;
+const testEndpoint = data.test;
+const debugging = data.debug;
+
+// Debugging option
+const log = debugging ? logToConsole : (() => { });
+
+// Set cookie names
+const sessionCookieName = '_aimwel_session';
+const paramsCookieName = '_aimwel_params';
+
+// Get required cookie and query params values
+const sessionIdFromCookie = getCookie(sessionCookieName)[0];
+let paramsFromCookie = getCookie(paramsCookieName)[0];
+const paramsFromUrl = getUrl('query');
 
 // Set parameter name
 const awId = 'aw_id';
+const utmSource = 'utm_source';
 
-// Get query params
-const urlQuery = getUrl('query');
+// Define cookie parameters
+const cookieOptions = {
+    domain: 'auto',
+    path: '/',
+    'max-age': 30 * 60,
+    samesite: 'Lax',
+    secure: true
+};
 
-// Set query params with sessionId as cookie
-if ((urlQuery.indexOf(awId) !== -1) && (data.event_type == 'view')){
-  const randomNumber = currentTimestampInMilliseconds + '.' + generateRandom(0,100);
-  setCookie(urlParamsCookieName,'session_id=' + randomNumber + '&' + urlQuery, {
-    domain: 'auto', 
-    path: '/', 
-    encode: false, 
-    samesite: 'none', 
-    secure: true});
+let sessionId = sessionIdFromCookie;
+
+if (!sessionId) {
+    log('Session cookie nonexistent: creating sessionId and session cookie');
+    sessionId = generateRandom(1000000, 9999999) + '.' + generateRandom(1000000, 9999999);
+    setCookie(sessionCookieName, sessionId, cookieOptions);
+} else {
+    log('Session cookie exists: extending lifetime');
+    setCookie(sessionCookieName, sessionId, cookieOptions);
 }
 
-// Function to append parameters to the URL
-function appendParameters(url, parameters) {
-  parameters.forEach((element) => {
-    if (element.key !== undefined && element.value !== undefined) {
-    url += encodeUriComponent(element.key) + '=' + encodeUriComponent(element.value) + '&';
-  } else {
-    log('Platform parameter name or value is undefined, please check');
-  }
-});
+const urlContainsAimwelParams = paramsFromUrl.indexOf(awId) !== -1;
+const urlContainsUtmParams = paramsFromUrl.indexOf(utmSource) !== -1;
+const urlContainsParams = urlContainsAimwelParams || urlContainsUtmParams;
 
-return url;
+if (urlContainsParams) {
+    log('Campaign parameters detected in url: creating params cookie');
+    setCookie(paramsCookieName, paramsFromUrl, cookieOptions);
+    paramsFromCookie = paramsFromUrl;
+} else {
+    if (!paramsFromCookie) {
+        log('Campaign params cookie nonexistent and URL does not contain campaign params: continuing without');
+    } else {
+        log('Campaign params cookie exists: extending lifetime');
+        setCookie(paramsCookieName, paramsFromCookie, cookieOptions);
+    }
 }
 
-// Get URL params and sessionId from cookie
-const urlParams = getCookie(urlParamsCookieName)[0];
+let cookieContainsAimwelParams, cookieContainsUtmParams, cookieContainsParams;
 
-// Adding query string, required and platform parameters to URL
-let url = encodeUri(data.aimwel_api_endpoint) + '?timestamp=' +
-    currentTimestampInMilliseconds +
-    '&' +
-    'v=' +
-    templateGitHubVersion +
-    '&' +
-    'event_type=' +
-    data.event_type + 
-    '&';
+if (paramsFromCookie) {
+    cookieContainsAimwelParams = paramsFromCookie.indexOf(awId) !== -1;
+    cookieContainsUtmParams = paramsFromCookie.indexOf(utmSource) !== -1;
+    cookieContainsParams = cookieContainsAimwelParams || cookieContainsUtmParams;
+}
 
-url = appendParameters(url, data.platformParameters);
+// Function to strip trailing slash from endpoint url input field value
+function stripTrailingSlash(endPoint) {
+    if (endPoint.charAt(endPoint.length - 1) == "/") {
+        endPoint = endPoint.substring(0, endPoint.length - 1);
+    }
+    return endPoint;
+}
 
-url += urlParams;
+let endPointUrl;
 
-// Send GET request if aimwel cookie exists
-if (urlParams){
-  sendPixel(url, data.gtmOnSuccess(), data.gtmOnFailure());
+if (testEndpoint) {
+    log('Testing feature enabled: test endpoint active');
+    endPointUrl = encodeUri(stripTrailingSlash(apiEndpoint) + '/test');
+} else {
+    endPointUrl = encodeUri(stripTrailingSlash(apiEndpoint));
+}
+
+// Function to build URL with required and additional components
+function buildUrl() {
+    let url = endPointUrl;
+
+    url += '?timestamp=' + currentTimestampInMilliseconds;
+    url += '&session_id=' + sessionId;
+    url += '&event_type=' + eventType;
+    url += '&v=' + templateGitHubVersion;
+
+    data.platformParameters.forEach(param => {
+        if (param.key && param.value) {
+            url += '&' + encodeUriComponent(param.key) + '=' + encodeUriComponent(param.value);
+        }
+    });
+
+    if (paramsFromCookie) {
+        url += '&' + paramsFromCookie;
+    } else {
+        log('Campaign params omitted in URL builder due to nonexistent campaign params cookie or nonexistent url campaign parameters');
+    }
+
+    return url;
+}
+
+// Placeholder URL variable; only build full URL if sending pixel
+let fullUrl;
+
+// Build URL and Send GET request if conditions are met
+if (paramsFromCookie && cookieContainsAimwelParams) {
+    fullUrl = buildUrl();
+    log('Sending pixel: Aimwel campaign');
+    sendPixel(fullUrl + '&t=aimwel', data.gtmOnSuccess(), data.gtmOnFailure());
+    log('URL sent: ' + fullUrl + '&t=aimwel');
+} else {
+    if (trafficScope == 'all' && (cookieContainsUtmParams || !paramsFromCookie)) {
+        fullUrl = buildUrl();
+        log('Sending pixel: all traffic allowed');
+        sendPixel(fullUrl + '&t=all', data.gtmOnSuccess(), data.gtmOnFailure());
+        log('URL sent: ' + fullUrl + '&t=all');
+    } else if (trafficScope == 'aimwel') {
+        log('Not sending pixel: limited traffic allowed');
+        data.gtmOnSuccess();
+    } else {
+        log('Not sending pixel: no campaign params present and traffic scoping incorrect/unknown');
+        data.gtmOnFailure();
+    }
 }
 
 
@@ -372,7 +480,7 @@ ___WEB_PERMISSIONS___
                   },
                   {
                     "type": 1,
-                    "string": "session"
+                    "string": "any"
                   }
                 ]
               }
@@ -392,34 +500,45 @@ ___WEB_PERMISSIONS___
 ___TESTS___
 
 scenarios:
-- name: sendPixel wasCalled test
+- name: SetSessionIdAndSendPixel
+  code: "const mockData = getMockData({\n  event_type: 'view',\n});\nconst extraData\
+    \ = {\n  params: 'utm_source=test&utm_medium=test&aw_id=123',\n};\n\nmock('sendPixel',\
+    \ (url, onSuccess, onFailure) => {                 assertThat(url).isEqualTo('https://www.example.com?timestamp=1234&v=2574747&event_type=view&job_id=test_id_123&brand=test_for_template&session_id=1234.random&utm_source=test&utm_medium=test&aw_id=123');\n\
+    });\n\nrunCode(mockData);\n\nassertApi('setCookie').wasCalledWith(\n  '_aimwel',\
+    \ \n  'session_id=1234.random&' + extraData.params, \n  {\n    domain: 'auto',\
+    \ \n    path: '/', \n    encode: false, \n    samesite: 'none', \n    secure:\
+    \ true\n  }\n);"
+- name: testBuildUrlFunction
   code: |-
-    // Call runCode to run the template's code.
-    runCode(mockData);
+    const mockData = getMockData({
+      event_type: 'view',
+    });
+    const extraData = {
+      params: 'utm_source=test&utm_medium=test&aw_id=123',
+    };
 
-    // Verify that the tag finished successfully.
-    assertApi('sendPixel').wasCalled(1);
-- name: gtmOnSucces wasCalled test
-  code: |-
-    // Call runCode to run the template's code.
-    runCode(mockData);
+    mock('sendPixel', (url, onSuccess, onFailure) => {                 assertThat(url).isEqualTo('https://www.example.com?timestamp=1234&v=2574747&event_type=view&job_id=test_id_123&brand=test_for_template&session_id=1234.random&utm_source=test&utm_medium=test&aw_id=123');
+    });
 
-    // Verify that the tag finished successfully.
-    assertApi('gtmOnSuccess').wasCalled();
-- name: Flow test
-  code: |-
-    runCode(mockData);
+    const variableResult = runCode(mockData);
 
-    assertApi('getUrl').wasCalled();
-    assertApi('setCookie').wasCalled();
-    assertApi('encodeUri').wasCalled();
-    assertApi('sendPixel').wasCalled();
-    assertApi('logToConsole').wasCalled();
-    assertApi('gtmOnSuccess').wasCalled();
-    assertApi('getCookieValues').wasCalled();
-    assertApi('encodeUriComponent').wasCalled();
-    assertApi('getTimestampMillis').wasCalled();
-setup: ''
+    logToConsole('bla: ' + variableResult);
+
+
+    const expected = 'https://www.example.com?timestamp=1234&v=2574747&event_type=view&job_id=test_id_123&brand=test_for_template&session_id=1234.random&utm_source=test&utm_medium=test&aw_id=123';
+
+    assertThat(variableResult).isEqualTo(expected);
+setup: "const logToConsole = require(\"logToConsole\");\n\nconst getMockData = (obj)\
+  \ => {\n  const mockData = {\n    aimwel_api_endpoint: 'https://www.example.com',\n\
+  \    platformParameters: [\n      {\n        key: 'job_id',\n        value: 'test_id_123'\n\
+  \      },\n      {\n        key: 'brand',\n        value: 'test_for_template'\n\
+  \      }\n    ],\n  };\n  \n  // add new keys or override existing keys with input\
+  \ obj\n  for (var key in obj) {\n    mockData[key] = obj[key];\n  }\n  \n  return\
+  \ mockData;\n};\n\nconst cookies = {};\n\nmock('getTimestampMillis', () => 1234);\n\
+  mock('generateRandom', () => 'random');\nmock('getUrl', component => {\n  if (component\
+  \ === 'query') {\n    return extraData.params;\n  } fail(\"getUrl failed\");\n});\n\
+  \nmock('setCookie', (name, value, options) => {\n  cookies[name] = [value];\n});\n\
+  \nmock('getCookieValues', (name) => {\n  return cookies[name];\n});"
 
 
 ___NOTES___
