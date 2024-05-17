@@ -307,13 +307,13 @@ let fullUrl;
 if (paramsFromCookie && cookieContainsAimwelParams) {
     fullUrl = buildUrl();
     log('Sending pixel: Aimwel campaign');
-    sendPixel(fullUrl + '&t=aimwel', data.gtmOnSuccess, data.gtmOnFailure);
+    sendPixel(fullUrl + '&t=aimwel', data.gtmOnSuccess(), data.gtmOnFailure());
     log('URL sent: ' + fullUrl + '&t=aimwel');
 } else {
     if (trafficScope == 'all' && (cookieContainsUtmParams || !paramsFromCookie)) {
         fullUrl = buildUrl();
         log('Sending pixel: all traffic allowed');
-        sendPixel(fullUrl + '&t=all', data.gtmOnSuccess, data.gtmOnFailure);
+        sendPixel(fullUrl + '&t=all', data.gtmOnSuccess(), data.gtmOnFailure());
         log('URL sent: ' + fullUrl + '&t=all');
     } else if (trafficScope == 'aimwel') {
         log('Not sending pixel: limited traffic allowed');
