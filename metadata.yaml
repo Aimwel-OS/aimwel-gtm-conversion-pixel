@@ -16,6 +16,10 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
+  - sha: xxx
+    changeNotes: |2
+      1. Refactored unit tests
+  # Older versions
   - sha: 548224e15ca2158b33096749f85e1d18d5f810ad
     changeNotes: |2
       1. Refactored entire session and parameter logic to facilitate all scenarios
@@ -24,7 +28,6 @@ versions:
       4. Added debugging logging feature to enable verbose browser console logging
       5. Removed unused UI features and optimised code
       TODO: Update unit and integration tests
-  # Older versions
   - sha: 30c879dd2db16500975980e40be667031fc90c27
     changeNotes: |2
       Added version parameter to template
