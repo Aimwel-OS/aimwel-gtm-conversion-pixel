@@ -175,7 +175,7 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-// Required necessary APIs
+// Required necessary APIs 
 const getUrl = require('getUrl');
 const sendPixel = require('sendPixel');
 const encodeUri = require('encodeUri');
