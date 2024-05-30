@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
-  - sha: xxx
+  - sha: 7c10d6102d105986b721bc05112bf74235708a5a
     changeNotes: |2
       1. Refactored unit tests
   # Older versions
