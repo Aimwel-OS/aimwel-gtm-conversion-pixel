@@ -100,6 +100,35 @@ ___TEMPLATE_PARAMETERS___
     "defaultValue": "all"
   },
   {
+    "type": "SELECT",
+    "name": "url_params_storage_duration_days",
+    "displayName": "Attribution settings to match GA4",
+    "macrosInSelect": false,
+    "selectItems": [
+      {
+        "value": 30,
+        "displayValue": "30 days"
+      },
+      {
+        "value": 60,
+        "displayValue": "60 days"
+      },
+      {
+        "value": 90,
+        "displayValue": "90 days"
+      }
+    ],
+    "simpleValueType": true,
+    "help": "The time period for the click-through attribution that should be aligned to your GA4 Attribution Setting.",
+    "defaultValue": 90,
+    "valueValidators": [
+      {
+        "type": "NON_EMPTY"
+      }
+    ],
+    "alwaysInSummary": true
+  },
+  {
     "type": "CHECKBOX",
     "name": "test",
     "checkboxText": "Enable testing template",
@@ -167,6 +196,13 @@ ___TEMPLATE_PARAMETERS___
     "valueValidators": [
       {
         "type": "NON_EMPTY"
+      },
+      {
+        "type": "TABLE_ROW_COUNT",
+        "args": [
+          2,
+          2
+        ]
       }
     ]
   }
@@ -175,7 +211,7 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-// Required necessary APIs 
+// Required necessary APIs
 const getUrl = require('getUrl');
 const sendPixel = require('sendPixel');
 const encodeUri = require('encodeUri');
@@ -195,6 +231,7 @@ const apiEndpoint = data.aimwel_api_endpoint;
 const eventType = data.event_type;
 const trafficScope = data.traffic_scope;
 const testEndpoint = data.test;
+const urlParamsStorageDurationDays = (1 * data.url_params_storage_duration_days) || 90;
 const debugging = data.debug;
 
 // Debugging option
@@ -214,7 +251,7 @@ const awId = 'aw_id';
 const utmSource = 'utm_source';
 
 // Define cookie parameters
-const cookieOptions = {
+const cookieOptionsSession = {
     domain: 'auto',
     path: '/',
     'max-age': 30 * 60,
@@ -227,26 +264,33 @@ let sessionId = sessionIdFromCookie;
 if (!sessionId) {
     log('Session cookie nonexistent: creating sessionId and session cookie');
     sessionId = generateRandom(1000000, 9999999) + '.' + generateRandom(1000000, 9999999);
-    setCookie(sessionCookieName, sessionId, cookieOptions);
+    setCookie(sessionCookieName, sessionId, cookieOptionsSession);
 } else {
     log('Session cookie exists: extending lifetime');
-    setCookie(sessionCookieName, sessionId, cookieOptions);
+    setCookie(sessionCookieName, sessionId, cookieOptionsSession);
 }
+
+const cookieOptionsParams = {
+    domain: 'auto',
+    path: '/',
+    'max-age': urlParamsStorageDurationDays * 24 * 60 * 60,
+    samesite: 'Lax',
+    secure: true
+};
 
 const urlContainsAimwelParams = paramsFromUrl.indexOf(awId) !== -1;
 const urlContainsUtmParams = paramsFromUrl.indexOf(utmSource) !== -1;
 const urlContainsParams = urlContainsAimwelParams || urlContainsUtmParams;
 
 if (urlContainsParams) {
-    log('Campaign parameters detected in url: creating params cookie');
-    setCookie(paramsCookieName, paramsFromUrl, cookieOptions);
+    log('Campaign parameters detected in url: creating or overwriting params cookie');
+    setCookie(paramsCookieName, paramsFromUrl, cookieOptionsParams);
     paramsFromCookie = paramsFromUrl;
 } else {
     if (!paramsFromCookie) {
         log('Campaign params cookie nonexistent and URL does not contain campaign params: continuing without');
     } else {
-        log('Campaign params cookie exists: extending lifetime');
-        setCookie(paramsCookieName, paramsFromCookie, cookieOptions);
+        log('Campaign params cookie exists: continuing with');
     }
 }
 
@@ -512,8 +556,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\
     \  \n  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: newUser+UtmUrlParams&NoCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
@@ -525,8 +569,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\
     \  \n  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: newUser+UtmUrlParams&NoCookieParamsAimwelTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
@@ -538,8 +582,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\
     \  \n  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: newUser+NoUrlParams&NoCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&t=all';\n\
@@ -551,8 +595,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\
     \  \n  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasNotCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: returningUser+BothUrlParams&BothCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
@@ -564,8 +608,8 @@ scenarios:
     \ value;\n  }\n  if (name === params) {\n    cookies[name] = value;\n  }\n});\n\
     \nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) => {\n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: returningUser+UtmUrlParams&UtmCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
@@ -577,8 +621,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\
     \  \n  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: returningUser+NoUrlParams&AwIdCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&aw_id=456&t=aimwel';\n\
@@ -590,8 +634,8 @@ scenarios:
     \ value;\n  }\n  if (name === params) {\n    cookies[name] = value;\n  }\n});\n\
     \nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithoutCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&t=all';\n\
@@ -603,8 +647,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasNotCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithoutCookieParamsAimwelTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&t=all';\n\
@@ -616,8 +660,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasNotCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithUtmCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
@@ -629,8 +673,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithAwIdCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&aw_id=456&t=aimwel';\n\
@@ -642,8 +686,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithUtmCookieParamsAimwelTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
     \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=f7e4dac&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
@@ -655,8 +699,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionStripTrailingSlash
   code: "const mockData = getMockData({\n  aimwel_api_endpoint: 'https://www.example.com/',\n\
     \  event_type: 'view',\n  traffic_scope: 'all',\n  debug: true,\n});\n\nconst\
@@ -669,8 +713,8 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasNotCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionTestEndpointActive
   code: "const mockData = getMockData({\n  aimwel_api_endpoint: 'https://www.example.com/',\n\
     \  event_type: 'view',\n  traffic_scope: 'all',\n  test: true,\n  debug: true,\n\
@@ -683,22 +727,25 @@ scenarios:
     \ === params) {\n    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url,\
     \ gtmOnSuccess, gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n\
     \  gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], options);\nassertApi('setCookie').wasNotCalledWith(params,\
-    \ cookies[params], options);"
+    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
+    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 setup: "const logToConsole = require(\"logToConsole\");\n\nconst session = '_aimwel_session';\n\
-  const params = '_aimwel_params'; \n\nconst getMockData = (obj) => {\n  const mockData\
+  const params = '_aimwel_params';\n\nconst getMockData = (obj) => {\n  const mockData\
   \ = {\n    aimwel_api_endpoint: 'https://www.example.com',\n    platformParameters:\
   \ [\n      {\n        key: 'job_id',\n        value: 'test_id_123'\n      },\n \
   \     {\n        key: 'brand',\n        value: 'test_for_template'\n      }\n  \
-  \  ],\n  };\n  \n  // add new keys or override existing keys with input obj\n  for\
-  \ (var key in obj) {\n    mockData[key] = obj[key];\n  }\n  \n  return mockData;\n\
-  };\n\nconst extraData = {\n  params_full: 'utm_source=test&utm_medium=test&aw_id=123',\n\
-  \  params_awid: 'aw_id=123',\n  params_utm: 'utm_source=test&utm_medium=test',\n\
-  \  params_alt_full: 'utm_source=example&utm_medium=example&aw_id=456',\n  params_alt_awid:\
-  \ 'aw_id=456',\n  params_alt_utm: 'utm_source=example&utm_medium=example',\n  params_empty:\
-  \ '',\n};\n\nconst cookies = {};\n\nmock('getTimestampMillis', () => 321);\nmock('generateRandom',\
-  \ () => 1234);\n\nconst options = {\n    domain: 'auto',\n    path: '/',\n    'max-age':\
-  \ 30 * 60,\n    samesite: 'Lax',\n    secure: true\n  };\n"
+  \  ],\n    url_params_storage_duration_days: \"90\",\n  };\n  \n  // add new keys\
+  \ or override existing keys with input obj\n  for (var key in obj) {\n    mockData[key]\
+  \ = obj[key];\n  }\n  \n  return mockData;\n};\n\nconst extraData = {\n  params_full:\
+  \ 'utm_source=test&utm_medium=test&aw_id=123',\n  params_awid: 'aw_id=123',\n  params_utm:\
+  \ 'utm_source=test&utm_medium=test',\n  params_alt_full: 'utm_source=example&utm_medium=example&aw_id=456',\n\
+  \  params_alt_awid: 'aw_id=456',\n  params_alt_utm: 'utm_source=example&utm_medium=example',\n\
+  \  params_empty: '',\n};\n\nconst cookies = {};\n\nmock('getTimestampMillis', ()\
+  \ => 321);\nmock('generateRandom', () => 1234);\n\nconst cookieOptionsSession =\
+  \ {\n    domain: 'auto',\n    path: '/',\n    'max-age': 30 * 60,\n    samesite:\
+  \ 'Lax',\n    secure: true\n  };\n\nconst cookieOptionsParams = {\n    domain: 'auto',\n\
+  \    path: '/',\n    'max-age': 90 * 24 * 60 * 60,\n    samesite: 'Lax',\n    secure:\
+  \ true\n  };"
 
 
 ___NOTES___
