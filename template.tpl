@@ -100,22 +100,33 @@ ___TEMPLATE_PARAMETERS___
     "defaultValue": "all"
   },
   {
-    "type": "TEXT",
+    "type": "SELECT",
     "name": "url_params_storage_duration_days",
-    "displayName": "URL Parameters cookie storage in days",
+    "displayName": "Attribution settings to match GA4",
+    "macrosInSelect": false,
+    "selectItems": [
+      {
+        "value": 30,
+        "displayValue": "30 days"
+      },
+      {
+        "value": 60,
+        "displayValue": "60 days"
+      },
+      {
+        "value": 90,
+        "displayValue": "90 days"
+      }
+    ],
     "simpleValueType": true,
+    "help": "The time period for the click-through attribution that should be aligned to your GA4 Attribution Setting.",
     "defaultValue": 90,
     "valueValidators": [
       {
-        "type": "POSITIVE_NUMBER",
-        "enablingConditions": [],
-        "errorMessage": "The value must be larger than or equal to 1."
+        "type": "NON_EMPTY"
       }
     ],
-    "valueUnit": "days",
-    "notSetText": "90",
-    "help": "Enter a value larger than or equal to 1.",
-    "valueHint": "90"
+    "alwaysInSummary": true
   },
   {
     "type": "CHECKBOX",
@@ -200,7 +211,7 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-// Required necessary APIs 
+// Required necessary APIs
 const getUrl = require('getUrl');
 const sendPixel = require('sendPixel');
 const encodeUri = require('encodeUri');
