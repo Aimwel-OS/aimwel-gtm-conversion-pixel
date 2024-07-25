@@ -100,6 +100,24 @@ ___TEMPLATE_PARAMETERS___
     "defaultValue": "all"
   },
   {
+    "type": "TEXT",
+    "name": "url_params_storage_duration_days",
+    "displayName": "URL Parameters cookie storage in days",
+    "simpleValueType": true,
+    "defaultValue": 90,
+    "valueValidators": [
+      {
+        "type": "POSITIVE_NUMBER",
+        "enablingConditions": [],
+        "errorMessage": "The value must be larger than or equal to 1."
+      }
+    ],
+    "valueUnit": "days",
+    "notSetText": "90",
+    "help": "Enter a value larger than or equal to 1.",
+    "valueHint": "90"
+  },
+  {
     "type": "CHECKBOX",
     "name": "test",
     "checkboxText": "Enable testing template",
@@ -167,6 +185,13 @@ ___TEMPLATE_PARAMETERS___
     "valueValidators": [
       {
         "type": "NON_EMPTY"
+      },
+      {
+        "type": "TABLE_ROW_COUNT",
+        "args": [
+          2,
+          2
+        ]
       }
     ]
   }
@@ -195,6 +220,7 @@ const apiEndpoint = data.aimwel_api_endpoint;
 const eventType = data.event_type;
 const trafficScope = data.traffic_scope;
 const testEndpoint = data.test;
+const urlParamsStorageDurationDays = (1 * data.url_params_storage_duration_days) || 90;
 const debugging = data.debug;
 
 // Debugging option
@@ -236,7 +262,7 @@ if (!sessionId) {
 const cookieOptionsParams = {
     domain: 'auto',
     path: '/',
-    'max-age': 90 * 24 * 60 * 60,
+    'max-age': urlParamsStorageDurationDays * 24 * 60 * 60,
     samesite: 'Lax',
     secure: true
 };
@@ -693,21 +719,22 @@ scenarios:
     assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
     assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 setup: "const logToConsole = require(\"logToConsole\");\n\nconst session = '_aimwel_session';\n\
-  const params = '_aimwel_params'; \n\nconst getMockData = (obj) => {\n  const mockData\
+  const params = '_aimwel_params';\n\nconst getMockData = (obj) => {\n  const mockData\
   \ = {\n    aimwel_api_endpoint: 'https://www.example.com',\n    platformParameters:\
   \ [\n      {\n        key: 'job_id',\n        value: 'test_id_123'\n      },\n \
   \     {\n        key: 'brand',\n        value: 'test_for_template'\n      }\n  \
-  \  ],\n  };\n  \n  // add new keys or override existing keys with input obj\n  for\
-  \ (var key in obj) {\n    mockData[key] = obj[key];\n  }\n  \n  return mockData;\n\
-  };\n\nconst extraData = {\n  params_full: 'utm_source=test&utm_medium=test&aw_id=123',\n\
-  \  params_awid: 'aw_id=123',\n  params_utm: 'utm_source=test&utm_medium=test',\n\
-  \  params_alt_full: 'utm_source=example&utm_medium=example&aw_id=456',\n  params_alt_awid:\
-  \ 'aw_id=456',\n  params_alt_utm: 'utm_source=example&utm_medium=example',\n  params_empty:\
-  \ '',\n};\n\nconst cookies = {};\n\nmock('getTimestampMillis', () => 321);\nmock('generateRandom',\
-  \ () => 1234);\n\nconst cookieOptionsSession = {\n    domain: 'auto',\n    path:\
-  \ '/',\n    'max-age': 30 * 60,\n    samesite: 'Lax',\n    secure: true\n  };\n\n\
-  const cookieOptionsParams = {\n    domain: 'auto',\n    path: '/',\n    'max-age':\
-  \ 90 * 24 * 60 * 60,\n    samesite: 'Lax',\n    secure: true\n  };"
+  \  ],\n    url_params_storage_duration_days: \"90\",\n  };\n  \n  // add new keys\
+  \ or override existing keys with input obj\n  for (var key in obj) {\n    mockData[key]\
+  \ = obj[key];\n  }\n  \n  return mockData;\n};\n\nconst extraData = {\n  params_full:\
+  \ 'utm_source=test&utm_medium=test&aw_id=123',\n  params_awid: 'aw_id=123',\n  params_utm:\
+  \ 'utm_source=test&utm_medium=test',\n  params_alt_full: 'utm_source=example&utm_medium=example&aw_id=456',\n\
+  \  params_alt_awid: 'aw_id=456',\n  params_alt_utm: 'utm_source=example&utm_medium=example',\n\
+  \  params_empty: '',\n};\n\nconst cookies = {};\n\nmock('getTimestampMillis', ()\
+  \ => 321);\nmock('generateRandom', () => 1234);\n\nconst cookieOptionsSession =\
+  \ {\n    domain: 'auto',\n    path: '/',\n    'max-age': 30 * 60,\n    samesite:\
+  \ 'Lax',\n    secure: true\n  };\n\nconst cookieOptionsParams = {\n    domain: 'auto',\n\
+  \    path: '/',\n    'max-age': 90 * 24 * 60 * 60,\n    samesite: 'Lax',\n    secure:\
+  \ true\n  };"
 
 
 ___NOTES___
