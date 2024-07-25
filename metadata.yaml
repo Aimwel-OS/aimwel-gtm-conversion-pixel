@@ -16,11 +16,14 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
+  - sha: b6a6bfdfc58bd204198c474652589a9e1a96acf6
+    changeNotes: |2
+      1. Added 'Attribution settings to match GA4' value to endpoint url parameters
+  # Older versions
   - sha: 964964ecae420cbe34b70e4d61ed6eeec227b406
     changeNotes: |2
       1. Added 'Attribution settings to match GA4' dropdown field
       2. URL Parameter storage duration is set with fixed value instead of being extended on visit
-  # Older versions
   - sha: 6b9bff31c9b632b55f88cf3b81394ab1d0d9da01
     changeNotes: |2
       1. Refactored unit tests
