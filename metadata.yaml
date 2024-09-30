@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
-  - sha: cad9eb403fcf41bc2917c01d70eefa331c54e3b0
+  - sha: c3ac3f97954f573c046acdbf001d6cc2234f5b02
     changeNotes: |2
       1. Added referrer and href parameters to template
       2. Modified logging to print correct situation
