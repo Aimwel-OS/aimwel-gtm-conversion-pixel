@@ -16,10 +16,16 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root 
 versions:
   # Latest version
+  - sha: cad9eb403fcf41bc2917c01d70eefa331c54e3b0
+    changeNotes: |2
+      1. Added referrer and href parameters to template
+      2. Modified logging to print correct situation
+      3. Changed permissions of getUrl and getReferrer to corresponding usage
+      4. Corrected spelling for logging
+  # Older versions
   - sha: b6a6bfdfc58bd204198c474652589a9e1a96acf6
     changeNotes: |2
       1. Added 'Attribution settings to match GA4' value to endpoint url parameters
-  # Older versions
   - sha: 964964ecae420cbe34b70e4d61ed6eeec227b406
     changeNotes: |2
       1. Added 'Attribution settings to match GA4' dropdown field
