@@ -218,6 +218,7 @@ const encodeUri = require('encodeUri');
 const setCookie = require('setCookie');
 const getCookie = require('getCookieValues');
 const logToConsole = require('logToConsole');
+const getReferrerUrl = require('getReferrerUrl');
 const generateRandom = require('generateRandom');
 const encodeUriComponent = require('encodeUriComponent');
 const getTimestampMillis = require('getTimestampMillis');
@@ -245,6 +246,10 @@ const paramsCookieName = '_aimwel_params';
 const sessionIdFromCookie = getCookie(sessionCookieName)[0];
 let paramsFromCookie = getCookie(paramsCookieName)[0];
 const paramsFromUrl = getUrl('query');
+const currentHost = getUrl('host');
+const currentPath = getUrl('path');
+const referrerHost = getReferrerUrl('host');
+const referrerPath = getReferrerUrl('path');
 
 // Set parameter name
 const awId = 'aw_id';
@@ -290,7 +295,7 @@ if (urlContainsParams) {
     if (!paramsFromCookie) {
         log('Campaign params cookie nonexistent and URL does not contain campaign params: continuing without');
     } else {
-        log('Campaign params cookie exists: continuing with');
+        log('Campaign params cookie exists: continuing with existing');
     }
 }
 
@@ -329,6 +334,10 @@ function buildUrl() {
     url += '&event_type=' + eventType;
     url += '&v=' + templateGitHubVersion;
     url += '&attr_window=' + urlParamsStorageDurationDays;
+    url += '&ref_host=' + referrerHost;
+    url += '&ref_path=' + referrerPath;
+    url += '&curr_host=' + currentHost;
+    url += '&curr_path=' + currentPath;
 
     data.platformParameters.forEach(param => {
         if (param.key && param.value) {
@@ -351,13 +360,25 @@ let fullUrl;
 // Build URL and Send GET request if conditions are met
 if (paramsFromCookie && cookieContainsAimwelParams) {
     fullUrl = buildUrl();
-    log('Sending pixel: Aimwel campaign');
+    
+    if (testEndpoint) {
+      log('Sending pixel to test endpoint: Aimwel campaign');
+    } else {
+        log('Sending pixel: Aimwel campaign');
+    }
+  
     sendPixel(fullUrl + '&t=aimwel', data.gtmOnSuccess, data.gtmOnFailure);
     log('URL sent: ' + fullUrl + '&t=aimwel');
 } else {
     if (trafficScope == 'all' && (cookieContainsUtmParams || !paramsFromCookie)) {
         fullUrl = buildUrl();
-        log('Sending pixel: all traffic allowed');
+        
+        if (testEndpoint) {
+          log('Sending pixel to test endpoint: all traffic allowed');
+        } else {
+          log('Sending pixel: all traffic allowed');
+        }
+
         sendPixel(fullUrl + '&t=all', data.gtmOnSuccess, data.gtmOnFailure);
         log('URL sent: ' + fullUrl + '&t=all');
     } else if (trafficScope == 'aimwel') {
@@ -458,7 +479,21 @@ ___WEB_PERMISSIONS___
           }
         },
         {
+          "key": "path",
+          "value": {
+            "type": 8,
+            "boolean": true
+          }
+        },
+        {
           "key": "query",
+          "value": {
+            "type": 8,
+            "boolean": true
+          }
+        },
+        {
+          "key": "host",
           "value": {
             "type": 8,
             "boolean": true
@@ -531,6 +566,48 @@ ___WEB_PERMISSIONS___
                 ]
               }
             ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "get_referrer",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "urlParts",
+          "value": {
+            "type": 1,
+            "string": "specific"
+          }
+        },
+        {
+          "key": "path",
+          "value": {
+            "type": 8,
+            "boolean": true
+          }
+        },
+        {
+          "key": "host",
+          "value": {
+            "type": 8,
+            "boolean": true
+          }
+        },
+        {
+          "key": "queriesAllowed",
+          "value": {
+            "type": 1,
+            "string": "any"
           }
         }
       ]
