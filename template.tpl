@@ -225,7 +225,7 @@ const getTimestampMillis = require('getTimestampMillis');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
 // Template Version
-const templateGitHubVersion = '8000b00';
+const templateGitHubVersion = '19537a6';
 
 // Assign data fields to variables
 const apiEndpoint = data.aimwel_api_endpoint;
@@ -632,7 +632,7 @@ ___TESTS___
 scenarios:
 - name: newUser+BothUrlParams&NoCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  debug: true,\n});\n\
-    \nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&attr_window=90&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
+    \nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
     \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
     \ component => {\n  if (component === 'query') {\n    return extraData.params_full;\n\
@@ -645,7 +645,7 @@ scenarios:
     assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: newUser+UtmUrlParams&NoCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=f7e4dac&attr_window=90&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
     \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
     \ component => {\n  if (component === 'query') {\n    return extraData.params_utm;\n\
@@ -658,7 +658,7 @@ scenarios:
     assertApi('setCookie').wasCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: newUser+UtmUrlParams&NoCookieParamsAimwelTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
     \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
     \ component => {\n  if (component === 'query') {\n    return getUrlData.params_utm;\n\
@@ -676,7 +676,7 @@ scenarios:
     \ cookies[params], cookieOptionsParams);"
 - name: newUser+NoUrlParams&NoCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
     \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
     \ component => {\n  if (component === 'query') {\n    return getUrlData.params_empty;\n\
@@ -694,7 +694,7 @@ scenarios:
     \ cookies[params], cookieOptionsParams);"
 - name: returningUser+BothUrlParams&BothCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_alt_full];\n  }\n\
     });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
@@ -712,7 +712,7 @@ scenarios:
     \ cookies[params], cookieOptionsParams);"
 - name: returningUser+UtmUrlParams&UtmCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
     \  }\n  if (name === params) { \n    return getUrlData.params_utm;\n  }\n});\n\
     \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_utm;\n\
@@ -730,7 +730,7 @@ scenarios:
     \ cookies[params], cookieOptionsParams);"
 - name: returningUser+NoUrlParams&AwIdCookieParams
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&aw_id=456&t=aimwel';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&aw_id=456&t=aimwel';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_alt_awid];\n  }\n\
     });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
@@ -748,7 +748,7 @@ scenarios:
     assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithoutCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
     });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
@@ -766,7 +766,7 @@ scenarios:
     assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithoutCookieParamsAimwelTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
     });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
@@ -784,7 +784,7 @@ scenarios:
     assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithUtmCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_utm];\n  }\n});\n\
     \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_alt_utm;\n\
@@ -802,7 +802,7 @@ scenarios:
     \ cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithAwIdCookieParamsAllTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&aw_id=456&t=aimwel';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&aw_id=456&t=aimwel';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_full];\n  }\n});\n\
     \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_alt_full;\n\
@@ -820,7 +820,7 @@ scenarios:
     \ cookies[params], cookieOptionsParams);"
 - name: unitTestFunctionBuildUrlWithUtmCookieParamsAimwelTraffic
   code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
+    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_utm];\n  }\n});\n\
     \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_alt_utm;\n\
@@ -839,7 +839,7 @@ scenarios:
 - name: unitTestFunctionStripTrailingSlash
   code: "const mockData = getMockData({\n  aimwel_api_endpoint: 'https://www.example.com/',\n\
     \  event_type: 'view',\n  traffic_scope: 'all',\n  debug: true,\n});\n\nconst\
-    \ expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
+    \ expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
     });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
@@ -858,7 +858,7 @@ scenarios:
 - name: unitTestFunctionTestEndpointActive
   code: "const mockData = getMockData({\n  aimwel_api_endpoint: 'https://www.example.com/',\n\
     \  event_type: 'view',\n  traffic_scope: 'all',\n  test: true,\n  debug: true,\n\
-    });\n\nconst expected = 'https://www.example.com/test?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
+    });\n\nconst expected = 'https://www.example.com/test?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
     \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
     });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
@@ -877,7 +877,7 @@ scenarios:
 - name: unitTestFunctionBuildUrlEmptyJobId
   code: "const mockData = getMockData({\n  event_type: 'view',\n  debug: true,\n \
     \ platformParameters: [\n      {\n        key: 'job_id',\n        value: undefined\n\
-    \      }\n    ],\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=unknown&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
+    \      }\n    ],\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=19537a6&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=unknown&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
     \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
     \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
     \ component => {\n  if (component === 'query') {\n    return getUrlData.params_full;\n\
