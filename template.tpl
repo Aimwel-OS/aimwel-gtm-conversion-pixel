@@ -229,7 +229,7 @@ const getTimestampMillis = require('getTimestampMillis');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
 // Template Version
-const templateGitHubVersion = '964964e';
+const templateGitHubVersion = '658b701';
 
 // Assign data fields to variables
 const apiEndpoint = data.aimwel_api_endpoint;
