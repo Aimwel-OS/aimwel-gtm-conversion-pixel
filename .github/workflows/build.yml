@@ -12,6 +12,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
+
       - name: Check for __GIT_SHA__ placeholder
         run: grep -q "__GIT_SHA__" template.tpl && grep -q "__GIT_SHA__" metadata.yaml
 
