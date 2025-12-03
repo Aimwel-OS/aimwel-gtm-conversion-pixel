@@ -127,9 +127,10 @@ function buildExpectedUrl(options) {
         '?timestamp=1000' +
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
-        '&px_v=1' +
-        '&px_dm=false' +
-        '&px_pm=false' +
+        '&px_v=__GIT_SHA__' +
+        '&cv_v=1' +
+        '&cv_dm=false' +
+        '&cv_pm=false' +
         '&attr_window=' + attrWindow +
         '&ref_host=' + referrerData.ref_host +
         '&ref_path=' + referrerData.ref_path +
