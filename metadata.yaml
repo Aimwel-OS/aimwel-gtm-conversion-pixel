@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root
 versions:
   # Latest version
-  - sha: 2a3875226f5c097471f5ff355d71ac27e7337c92
+  - sha: __GIT_SHA__
     changeNotes: |2
       1. Renamed pixel version parameter (v → px_v) with automatic version injection via GitHub Actions
       2. Added container version tracking (cv_v, cv_dm, cv_pm parameters)
