@@ -12,6 +12,7 @@ const getContainerVersion = require('getContainerVersion');
 
 
 // Constants
+const PIXEL_VERSION = '__GIT_SHA__';
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
 const GA_COOKIE = '_ga';
@@ -31,6 +32,7 @@ const log = data.debug ? logToConsole : function() {};
 
 // Log configuration
 log(LOG_PREFIX + 'Configuration:');
+log(LOG_PREFIX + '  pixel_version: ' + PIXEL_VERSION);
 log(LOG_PREFIX + '  endpoint: ' + endpoint);
 log(LOG_PREFIX + '  event_type: ' + eventType);
 log(LOG_PREFIX + '  traffic_scope: ' + trafficScope);
@@ -122,9 +124,10 @@ function buildUrl() {
         '?timestamp=' + getTimestampMillis() +
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
-        '&px_v=' + cv.version +
-        '&px_dm=' + cv.debugMode +
-        '&px_pm=' + cv.previewMode +
+        '&px_v=' + PIXEL_VERSION +
+        '&cv_v=' + cv.version +
+        '&cv_dm=' + cv.debugMode +
+        '&cv_pm=' + cv.previewMode +
         '&attr_window=' + attrDays +
         '&ref_host=' + getReferrerUrl('host') +
         '&ref_path=' + getReferrerUrl('path') +
