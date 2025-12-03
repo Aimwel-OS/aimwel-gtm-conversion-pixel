@@ -9,7 +9,6 @@ on:
 jobs:
   validate-placeholder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +18,6 @@ jobs:
   inject-version:
     runs-on: ubuntu-latest
     needs: validate-placeholder
-    if: always() && (needs.validate-placeholder.result == 'success' || needs.validate-placeholder.result == 'skipped')
     permissions:
       contents: write
     steps:
