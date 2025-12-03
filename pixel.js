@@ -67,6 +67,10 @@ function contains(str, substr) {
     return str && str.indexOf(substr) !== -1;
 }
 
+function stripTrailingSlash(str) {
+    return str && str.charAt(str.length - 1) === '/' ? str.substring(0, str.length - 1) : str;
+}
+
 function genSessionId() {
     return generateRandom(1000000, 9999999) + '.' + generateRandom(1000000, 9999999);
 }
@@ -120,7 +124,7 @@ log(LOG_PREFIX + 'GA cookie: ' + (gaCookie || '(not set)'));
 function buildUrl() {
     const cv = getContainerVersion();
 
-    let url = endpoint + (isTestMode ? '/test' : '') +
+    let url = stripTrailingSlash(endpoint) + (isTestMode ? '/test' : '') +
         '?timestamp=' + getTimestampMillis() +
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
