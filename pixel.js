@@ -14,6 +14,7 @@ const getContainerVersion = require('getContainerVersion');
 // Constants
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
+const GA_COOKIE = '_ga';
 const AW_ID = 'aw_id';
 const UTM_SOURCE = 'utm_source';
 const LOG_PREFIX = '[Aimwel] ';
@@ -107,6 +108,12 @@ const hasAwId = contains(campaignParams, AW_ID);
 const hasUtm = contains(campaignParams, UTM_SOURCE);
 
 
+// Google Analytics cookie
+const gaCookie = getCookieValues(GA_COOKIE)[0];
+
+log(LOG_PREFIX + 'GA cookie: ' + (gaCookie || '(not set)'));
+
+
 // Build URL
 function buildUrl() {
     const cv = getContainerVersion();
@@ -130,6 +137,10 @@ function buildUrl() {
 
     if (campaignParams) {
         url += '&' + campaignParams;
+    }
+
+    if (gaCookie) {
+        url += '&_ga=' + encodeUriComponent(gaCookie);
     }
 
     return url;
