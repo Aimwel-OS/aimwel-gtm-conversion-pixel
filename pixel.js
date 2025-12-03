@@ -16,6 +16,7 @@ const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
 const AW_ID = 'aw_id';
 const UTM_SOURCE = 'utm_source';
+const LOG_PREFIX = '[Aimwel] ';
 
 
 // Config
@@ -27,29 +28,17 @@ const attrDays = (1 * data.url_params_storage_duration_days) || 90;
 const log = data.debug ? logToConsole : function() {};
 
 
-// Log prefix for easy filtering in console
-const LOG_PREFIX = '[Aimwel Pixel] ';
+// Log configuration
+log(LOG_PREFIX + 'Configuration:');
+log(LOG_PREFIX + '  endpoint: ' + endpoint);
+log(LOG_PREFIX + '  event_type: ' + eventType);
+log(LOG_PREFIX + '  traffic_scope: ' + trafficScope);
+log(LOG_PREFIX + '  test_mode: ' + isTestMode);
+log(LOG_PREFIX + '  attribution_days: ' + attrDays);
 
-function logInfo(msg) {
-    log(LOG_PREFIX + msg);
-}
-
-function logError(msg) {
-    log(LOG_PREFIX + 'ERROR: ' + msg);
-}
-
-function logDebug(label, value) {
-    log(LOG_PREFIX + label + ': ' + value);
-}
-
-
-// Initialization logging
-logInfo('Initializing...');
-logDebug('Endpoint', endpoint);
-logDebug('Event type', eventType);
-logDebug('Traffic scope', trafficScope);
-logDebug('Test mode', isTestMode);
-logDebug('Attribution window (days)', attrDays);
+data.platformParameters.forEach(function(p) {
+    log(LOG_PREFIX + '  ' + p.key + ': ' + p.value);
+});
 
 
 // Cookie configs
@@ -81,54 +70,35 @@ function genSessionId() {
 
 
 // Session management
-logInfo('Processing session...');
-
 const existingSessionId = getCookieValues(SESSION_COOKIE)[0];
 const sessionId = existingSessionId || genSessionId();
+const sessionStatus = existingSessionId ? '[EXISTING]' : '[NEW]';
 
-if (existingSessionId) {
-    logDebug('Session cookie found', existingSessionId);
-    logInfo('Extending session cookie lifetime');
-} else {
-    logInfo('No session cookie found, creating new session');
-    logDebug('New session ID', sessionId);
-}
+log(LOG_PREFIX + 'Session ' + sessionStatus + ': ' + sessionId);
 
 setCookie(SESSION_COOKIE, sessionId, sessionCookieOpts);
 
-logInfo('Session cookie set');
-
 
 // Campaign params management
-logInfo('Processing campaign parameters...');
+const campaignParamsBefore = getCookieValues(PARAMS_COOKIE)[0];
 
-let campaignParams = getCookieValues(PARAMS_COOKIE)[0];
-
-logDebug('Campaign params from cookie', campaignParams || '(none)');
+log(LOG_PREFIX + 'Campaign params (before): ' + (campaignParamsBefore || '(empty)'));
 
 const urlParams = getUrl('query');
+const urlHasParams = contains(urlParams, AW_ID) || contains(urlParams, UTM_SOURCE);
 
-logDebug('URL query string', urlParams || '(empty)');
-
-const urlHasAwId = contains(urlParams, AW_ID);
-const urlHasUtm = contains(urlParams, UTM_SOURCE);
-const urlHasParams = urlHasAwId || urlHasUtm;
-
-logDebug('URL contains aw_id', urlHasAwId);
-logDebug('URL contains utm_source', urlHasUtm);
+let campaignParams = campaignParamsBefore;
 
 if (urlHasParams) {
-    logInfo('Campaign parameters detected in URL, updating cookie');
-
     setCookie(PARAMS_COOKIE, urlParams, paramsCookieOpts);
 
     campaignParams = urlParams;
 
-    logDebug('Campaign params cookie updated', campaignParams);
+    log(LOG_PREFIX + 'Campaign params (after): ' + campaignParams + ' [UPDATED FROM URL]');
 } else if (campaignParams) {
-    logInfo('Using existing campaign params from cookie');
+    log(LOG_PREFIX + 'Campaign params (after): ' + campaignParams + ' [UNCHANGED]');
 } else {
-    logInfo('No campaign parameters available (URL or cookie)');
+    log(LOG_PREFIX + 'Campaign params (after): (empty) [NO PARAMS]');
 }
 
 
@@ -136,24 +106,13 @@ if (urlHasParams) {
 const hasAwId = contains(campaignParams, AW_ID);
 const hasUtm = contains(campaignParams, UTM_SOURCE);
 
-logDebug('Campaign params contain aw_id', hasAwId);
-logDebug('Campaign params contain utm_source', hasUtm);
-
 
 // Build URL
 function buildUrl() {
-    logInfo('Building tracking URL...');
-
     const cv = getContainerVersion();
-    const timestamp = getTimestampMillis();
-
-    logDebug('Container version', cv.version);
-    logDebug('Debug mode', cv.debugMode);
-    logDebug('Preview mode', cv.previewMode);
-    logDebug('Timestamp', timestamp);
 
     let url = endpoint + (isTestMode ? '/test' : '') +
-        '?timestamp=' + timestamp +
+        '?timestamp=' + getTimestampMillis() +
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
         '&px_v=' + cv.version +
@@ -165,40 +124,12 @@ function buildUrl() {
         '&curr_host=' + getUrl('host') +
         '&curr_path=' + getUrl('path');
 
-    logDebug('Referrer host', getReferrerUrl('host') || '(none)');
-    logDebug('Referrer path', getReferrerUrl('path') || '(none)');
-    logDebug('Current host', getUrl('host'));
-    logDebug('Current path', getUrl('path'));
-
-    logInfo('Processing platform parameters...');
-
-    data.platformParameters.forEach(function(p, index) {
-        logDebug('Platform param [' + index + '] key', p.key || '(empty)');
-        logDebug('Platform param [' + index + '] value', p.value || '(empty)');
-
-        if (!p.key) {
-            logError('Platform param [' + index + '] has no key, skipping');
-
-            return;
-        }
-
-        const val = p.value || (p.key === 'job_id' ? 'unknown' : null);
-
-        if (p.key === 'job_id' && !p.value) {
-            logError('job_id is empty, using "unknown" - please check your configuration');
-        }
-
-        if (val) {
-            url += '&' + encodeUriComponent(p.key) + '=' + encodeUriComponent(val);
-        }
+    data.platformParameters.forEach(function(p) {
+        url += '&' + encodeUriComponent(p.key) + '=' + encodeUriComponent(p.value);
     });
 
     if (campaignParams) {
-        logInfo('Appending campaign parameters to URL');
-
         url += '&' + campaignParams;
-    } else {
-        logInfo('No campaign parameters to append');
     }
 
     return url;
@@ -209,16 +140,15 @@ function buildUrl() {
 function send(trafficType) {
     const url = buildUrl() + '&t=' + trafficType;
 
-    logInfo('Sending pixel...');
-    logDebug('Traffic type', trafficType);
-    logDebug('Full URL', url);
+    log(LOG_PREFIX + 'Traffic type: ' + trafficType);
+    log(LOG_PREFIX + 'Request URL: ' + url);
 
     sendPixel(url, function() {
-        logInfo('Pixel sent successfully');
+        log(LOG_PREFIX + 'Result: SUCCESS');
 
         data.gtmOnSuccess();
     }, function() {
-        logError('Pixel request failed');
+        log(LOG_PREFIX + 'Result: FAILED');
 
         data.gtmOnFailure();
     });
@@ -226,24 +156,13 @@ function send(trafficType) {
 
 
 // Execute
-logInfo('Determining send conditions...');
-logDebug('Has aw_id', hasAwId);
-logDebug('Has utm_source', hasUtm);
-logDebug('Traffic scope setting', trafficScope);
-
 if (hasAwId) {
-    logInfo('Condition met: aw_id present -> sending as Aimwel traffic');
-
     send('aimwel');
 } else if (trafficScope === 'all' && (hasUtm || !campaignParams)) {
-    logInfo('Condition met: traffic scope "all" with UTM or no params -> sending as all traffic');
-
     send('all');
 } else {
-    logInfo('No send condition met, not sending pixel');
-    logDebug('Reason', trafficScope === 'aimwel' ? 'Traffic scope limited to Aimwel only' : 'Unknown traffic scope or params mismatch');
+    log(LOG_PREFIX + 'Traffic type: (none)');
+    log(LOG_PREFIX + 'Result: NOT SENT - traffic scope is "aimwel" but no aw_id found');
 
     data.gtmOnSuccess();
 }
-
-logInfo('Execution complete');
