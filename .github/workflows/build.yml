@@ -25,7 +25,9 @@ jobs:
           token: ${{ secrets.PAT_AIMWEL_GITHUB_ACTIONS_ACCOUNT }}
 
       - name: Inject version
-        run: sed -i "s/__GIT_SHA__/${GITHUB_SHA::7}/g" template.tpl metadata.yaml
+        run: |
+          sed -i "s/__GIT_SHA__/${GITHUB_SHA::7}/g" template.tpl 
+          sed -i "s/__GIT_SHA__/${GITHUB_SHA}/g" metadata.yaml
 
       - name: Commit and push
         run: |

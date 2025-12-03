@@ -13,12 +13,18 @@
 # limitations under the License.
 
 homepage: "https://www.aimwel.com"
-documentation: See "README.md" in project root 
+documentation: See "README.md" in project root
 versions:
   # Latest version
-  - sha: 658b70185420c533ce0e9e3da5112975e195a158
-    changeNotes: added registration event type
+  - sha: __GIT_SHA__
+    changeNotes: |2
+      1. Added pixel version tracking (px_v parameter)
+      2. Added GA cookie support
+      3. Added GitHub Actions workflow for automatic version injection
+      4. Refactored tests
   # Older versions
+  - sha: 658b70185420c533ce0e9e3da5112975e195a158
+    changeNotes: Added registration event type
   - sha: a437825d563b120bde8ec7c8d068ea8c4de4c265
     changeNotes: |2
       1. Added missing job id failsafe
@@ -30,55 +36,48 @@ versions:
       3. Changed permissions of getUrl and getReferrer to corresponding usage
       4. Corrected spelling for logging
   - sha: b6a6bfdfc58bd204198c474652589a9e1a96acf6
-    changeNotes: |2
-      1. Added 'Attribution settings to match GA4' value to endpoint url parameters
+    changeNotes: Added 'Attribution settings to match GA4' value to endpoint url parameters
   - sha: 964964ecae420cbe34b70e4d61ed6eeec227b406
     changeNotes: |2
       1. Added 'Attribution settings to match GA4' dropdown field
       2. URL Parameter storage duration is set with fixed value instead of being extended on visit
   - sha: 6b9bff31c9b632b55f88cf3b81394ab1d0d9da01
-    changeNotes: |2
-      1. Refactored unit tests
+    changeNotes: Refactored unit tests
   - sha: 548224e15ca2158b33096749f85e1d18d5f810ad
     changeNotes: |2
       1. Refactored entire session and parameter logic to facilitate all scenarios
       2. Introduced traffic scoping toggle and logic to allow all or only Aimwel conversion forwarding
-      3. Introduced test endpoint toogle in the template for real-time debugging feedback
+      3. Introduced test endpoint toggle in the template for real-time debugging feedback
       4. Added debugging logging feature to enable verbose browser console logging
       5. Removed unused UI features and optimised code
-      TODO: Update unit and integration tests
   - sha: 30c879dd2db16500975980e40be667031fc90c27
-    changeNotes: |2
-      Added version parameter to template
+    changeNotes: Added version parameter to template
   - sha: 88e19d6c305a05bd8a340998cfd5b8ad9efe762d
     changeNotes: |2
-      Refactored entire tag to/for:
       1. Fix bug that caused issues with session cookies causing tag to fail
-      2. Remove dependancy on Google Analytics 4 session logic
+      2. Remove dependency on Google Analytics 4 session logic
       3. Introduce built-in session logic
       4. Set cookie under specific conditions
       5. Improve samesite cookie logic
       6. Remove GA4 measurement Id field from interface
   - sha: 9aab41e6dedb451f96db0c9c92bad540a814f099
-    changeNotes: |2
-      Fixed error in measurement Id validation
+    changeNotes: Fixed error in measurement Id validation
   - sha: d30412388cc9e759d893bbe78cd28fd88c7b6130
     changeNotes: |2
-      1. Refactored template code to optimise and reduce code.
-      2. Reduced input fields; no longer required due to code optimisations.
-      3. Added session Id value based on GA4 cookie logic.
-      4. Query parameter passthrough; individual query param processing no longer needed.
-      5. Refactored permissions to reflect changes.
+      1. Refactored template code to optimise and reduce code
+      2. Reduced input fields; no longer required due to code optimisations
+      3. Added session Id value based on GA4 cookie logic
+      4. Query parameter passthrough; individual query param processing no longer needed
+      5. Refactored permissions to reflect changes
   - sha: 1122b38a4184463138ae48f4d13855a8c0fc41b0
     changeNotes: |2
-      Optimised code
-      Adjusted field names
+      1. Optimised code
+      2. Adjusted field names
   - sha: b74f06359e8b92bd058cbeaa4ef35c14eb18aad9
     changeNotes: |2
-      Improved field options and feedback
-      Added more tests
-      Corrected sendpixel response
-      Optimized code
+      1. Improved field options and feedback
+      2. Added more tests
+      3. Corrected sendpixel response
+      4. Optimized code
   - sha: 99a9585be36dcad22bef9f0db8d8379968e2e430
     changeNotes: Initial Version
-    
