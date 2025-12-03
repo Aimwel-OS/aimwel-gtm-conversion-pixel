@@ -281,6 +281,10 @@ function contains(str, substr) {
     return str && str.indexOf(substr) !== -1;
 }
 
+function stripTrailingSlash(str) {
+    return str && str.charAt(str.length - 1) === '/' ? str.substring(0, str.length - 1) : str;
+}
+
 function genSessionId() {
     return generateRandom(1000000, 9999999) + '.' + generateRandom(1000000, 9999999);
 }
@@ -334,7 +338,7 @@ log(LOG_PREFIX + 'GA cookie: ' + (gaCookie || '(not set)'));
 function buildUrl() {
     const cv = getContainerVersion();
 
-    let url = endpoint + (isTestMode ? '/test' : '') +
+    let url = stripTrailingSlash(endpoint) + (isTestMode ? '/test' : '') +
         '?timestamp=' + getTimestampMillis() +
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
@@ -349,7 +353,7 @@ function buildUrl() {
         '&curr_path=' + getUrl('path');
 
     data.platformParameters.forEach(function(p) {
-        url += '&' + encodeUriComponent(p.key) + '=' + encodeUriComponent(p.value);
+        url += '&' + encodeUriComponent(p.key) + '=' + encodeUriComponent(p.value || 'unknown');
     });
 
     if (campaignParams) {
@@ -1291,6 +1295,30 @@ scenarios:
     mock('sendPixel', function(url, onSuccess, onFailure) {
         assertThat(url).isEqualTo(expected);
         assertThat(url.indexOf('/test?')).isGreaterThan(-1);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: trailingSlash_strippedFromEndpoint
+  code: |
+    // Trailing slash: should be stripped from endpoint URL
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_full);
+
+    const mockData = getMockData({
+        aimwel_api_endpoint: 'https://test.t2.aimwel.com/'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        // Should NOT have double slash
+        assertThat(url.indexOf('aimwel.com//')).isEqualTo(-1);
+        // Should start with correct URL (no trailing slash before query)
+        assertThat(url.indexOf('https://test.t2.aimwel.com?')).isGreaterThan(-1);
         onSuccess();
     });
 

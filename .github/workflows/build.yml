@@ -18,11 +18,11 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT_AIMWEL_GITHUB_ACTIONS_ACCOUNT }}
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Inject version
         run: |

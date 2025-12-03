@@ -139,7 +139,7 @@ function buildUrl() {
         '&curr_path=' + getUrl('path');
 
     data.platformParameters.forEach(function(p) {
-        url += '&' + encodeUriComponent(p.key) + '=' + encodeUriComponent(p.value);
+        url += '&' + encodeUriComponent(p.key) + '=' + encodeUriComponent(p.value || 'unknown');
     });
 
     if (campaignParams) {
