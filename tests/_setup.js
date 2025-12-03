@@ -5,6 +5,7 @@ const logToConsole = require("logToConsole");
 // Cookie names
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
+const GA_COOKIE = '_ga';
 
 // Cookie options (must match pixel.js)
 const cookieOptionsSession = {
@@ -100,10 +101,11 @@ function mockGetUrl(queryParams) {
 }
 
 // Helper to mock getCookieValues
-function mockCookies(sessionId, paramsValue) {
+function mockCookies(sessionId, paramsValue, gaValue) {
     mock('getCookieValues', function(name) {
         if (name === SESSION_COOKIE) return sessionId ? [sessionId] : [undefined];
         if (name === PARAMS_COOKIE) return paramsValue ? [paramsValue] : [undefined];
+        if (name === GA_COOKIE) return gaValue ? [gaValue] : [undefined];
         return [undefined];
     });
 }
@@ -118,6 +120,7 @@ function buildExpectedUrl(options) {
     var jobId = options.jobId || 'job_123';
     var brand = options.brand || 'test_brand';
     var campaignParams = options.campaignParams || '';
+    var gaValue = options.gaValue || '';
     var trafficType = options.trafficType || 'all';
 
     var url = endpoint + (testMode ? '/test' : '') +
@@ -137,6 +140,10 @@ function buildExpectedUrl(options) {
 
     if (campaignParams) {
         url += '&' + campaignParams;
+    }
+
+    if (gaValue) {
+        url += '&_ga=' + gaValue;
     }
 
     url += '&t=' + trafficType;
