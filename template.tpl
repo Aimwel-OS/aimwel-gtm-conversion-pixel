@@ -228,6 +228,7 @@ const getContainerVersion = require('getContainerVersion');
 // Constants
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
+const GA_COOKIE = '_ga';
 const AW_ID = 'aw_id';
 const UTM_SOURCE = 'utm_source';
 const LOG_PREFIX = '[Aimwel] ';
@@ -321,6 +322,12 @@ const hasAwId = contains(campaignParams, AW_ID);
 const hasUtm = contains(campaignParams, UTM_SOURCE);
 
 
+// Google Analytics cookie
+const gaCookie = getCookieValues(GA_COOKIE)[0];
+
+log(LOG_PREFIX + 'GA cookie: ' + (gaCookie || '(not set)'));
+
+
 // Build URL
 function buildUrl() {
     const cv = getContainerVersion();
@@ -344,6 +351,10 @@ function buildUrl() {
 
     if (campaignParams) {
         url += '&' + campaignParams;
+    }
+
+    if (gaCookie) {
+        url += '&_ga=' + encodeUriComponent(gaCookie);
     }
 
     return url;
@@ -714,6 +725,58 @@ scenarios:
     testEventType('apply');
     testEventType('finished_apply');
     testEventType('registration');
+- name: gaCookie_excludedWhenMissing
+  code: |
+    // GA cookie: excluded from request when not present
+
+    setupSharedMocks();
+    mockCookies(null, null, null);
+    mockGetUrl(urlData.params_full);
+
+    const mockData = getMockData({});
+
+    const expected = buildExpectedUrl({
+        campaignParams: urlData.params_full,
+        gaValue: '',
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        assertThat(url.indexOf('&_ga=')).isEqualTo(-1);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: gaCookie_includedWhenPresent
+  code: |
+    // GA cookie: included in request when present
+
+    setupSharedMocks();
+    mockCookies(null, null, 'GA1.2.123456789.1234567890');
+    mockGetUrl(urlData.params_full);
+
+    const mockData = getMockData({});
+
+    const expected = buildExpectedUrl({
+        campaignParams: urlData.params_full,
+        gaValue: 'GA1.2.123456789.1234567890',
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        assertThat(url.indexOf('&_ga=GA1.2.123456789.1234567890')).isGreaterThan(-1);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
 - name: newUser_awIdAndUtm_noCookie_trafficAimwel_sendsAimwel
   code: |
     // New user with aw_id + utm in URL, traffic_scope=aimwel -> sends aimwel (aw_id present)
@@ -1240,6 +1303,7 @@ setup: |-
   // Cookie names
   const SESSION_COOKIE = '_aimwel_session';
   const PARAMS_COOKIE = '_aimwel_params';
+  const GA_COOKIE = '_ga';
 
   // Cookie options (must match pixel.js)
   const cookieOptionsSession = {
@@ -1335,10 +1399,11 @@ setup: |-
   }
 
   // Helper to mock getCookieValues
-  function mockCookies(sessionId, paramsValue) {
+  function mockCookies(sessionId, paramsValue, gaValue) {
       mock('getCookieValues', function(name) {
           if (name === SESSION_COOKIE) return sessionId ? [sessionId] : [undefined];
           if (name === PARAMS_COOKIE) return paramsValue ? [paramsValue] : [undefined];
+          if (name === GA_COOKIE) return gaValue ? [gaValue] : [undefined];
           return [undefined];
       });
   }
@@ -1353,6 +1418,7 @@ setup: |-
       var jobId = options.jobId || 'job_123';
       var brand = options.brand || 'test_brand';
       var campaignParams = options.campaignParams || '';
+      var gaValue = options.gaValue || '';
       var trafficType = options.trafficType || 'all';
 
       var url = endpoint + (testMode ? '/test' : '') +
@@ -1372,6 +1438,10 @@ setup: |-
 
       if (campaignParams) {
           url += '&' + campaignParams;
+      }
+
+      if (gaValue) {
+          url += '&_ga=' + gaValue;
       }
 
       url += '&t=' + trafficType;
