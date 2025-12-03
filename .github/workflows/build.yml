@@ -1,0 +1,35 @@
+name: Build Template
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for __GIT_SHA__ placeholder
+        run: grep -q "__GIT_SHA__" template.tpl && grep -q "__GIT_SHA__" metadata.yaml
+
+  build:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_AIMWEL_GITHUB_ACTIONS_ACCOUNT }}
+
+      - name: Inject version
+        run: sed -i "s/__GIT_SHA__/${GITHUB_SHA::7}/g" template.tpl metadata.yaml
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add template.tpl metadata.yaml
+          git commit -m "Inject version ${GITHUB_SHA::7} [ci skip]"
+          git push
