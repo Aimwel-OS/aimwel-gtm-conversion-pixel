@@ -1,7 +1,6 @@
 // Required necessary APIs
 const getUrl = require('getUrl');
 const sendPixel = require('sendPixel');
-const encodeUri = require('encodeUri');
 const setCookie = require('setCookie');
 const getCookie = require('getCookieValues');
 const logToConsole = require('logToConsole');
@@ -13,8 +12,7 @@ const getContainerVersion = require('getContainerVersion');
 const currentTimestampInMilliseconds = getTimestampMillis();
 
 // Template Version
-const templateGitHubVersion = '658b701';
-const templateGTMVersion = getContainerVersion().version;
+const containerVersion = getContainerVersion();
 
 // Assign data fields to variables
 const apiEndpoint = data.aimwel_api_endpoint;
@@ -32,8 +30,8 @@ const sessionCookieName = '_aimwel_session';
 const paramsCookieName = '_aimwel_params';
 
 // Get required cookie and query params values
-const sessionIdFromCookie = getCookie(sessionCookieName)[0];
-let paramsFromCookie = getCookie(paramsCookieName)[0];
+const sessionIdFromCookie = getCookie(sessionCookieName)[0]; // undefined if empty array
+let paramsFromCookie = getCookie(paramsCookieName)[0]; // undefined if empty array
 const paramsFromUrl = getUrl('query');
 const currentHost = getUrl('host');
 const currentPath = getUrl('path');
@@ -44,11 +42,11 @@ const referrerPath = getReferrerUrl('path');
 const awId = 'aw_id';
 const utmSource = 'utm_source';
 
-// Define cookie parameters
+// get/set sessionId cookie
 const cookieOptionsSession = {
     domain: 'auto',
     path: '/',
-    'max-age': 30 * 60,
+    'max-age': 1800, // 30 minutes
     samesite: 'Lax',
     secure: true
 };
@@ -59,11 +57,14 @@ if (!sessionId) {
     log('Session cookie nonexistent: creating sessionId and session cookie');
     sessionId = generateRandom(1000000, 9999999) + '.' + generateRandom(1000000, 9999999);
     setCookie(sessionCookieName, sessionId, cookieOptionsSession);
+    log('Session cookie set: ' + sessionId);
 } else {
     log('Session cookie exists: extending lifetime');
     setCookie(sessionCookieName, sessionId, cookieOptionsSession);
+    log('Session cookie extended: ' + sessionId);
 }
 
+// get/set params cookie
 const cookieOptionsParams = {
     domain: 'auto',
     path: '/',
@@ -80,6 +81,7 @@ if (urlContainsParams) {
     log('Campaign parameters detected in url: creating or overwriting params cookie');
     setCookie(paramsCookieName, paramsFromUrl, cookieOptionsParams);
     paramsFromCookie = paramsFromUrl;
+    log('Campaign params cookie set/overwritten: ' + paramsFromCookie);
 } else {
     if (!paramsFromCookie) {
         log('Campaign params cookie nonexistent and URL does not contain campaign params: continuing without');
@@ -88,40 +90,21 @@ if (urlContainsParams) {
     }
 }
 
-let cookieContainsAimwelParams, cookieContainsUtmParams, cookieContainsParams;
-
-if (paramsFromCookie) {
-    cookieContainsAimwelParams = paramsFromCookie.indexOf(awId) !== -1;
-    cookieContainsUtmParams = paramsFromCookie.indexOf(utmSource) !== -1;
-    cookieContainsParams = cookieContainsAimwelParams || cookieContainsUtmParams;
-}
-
-// Function to strip trailing slash from endpoint url input field value
-function stripTrailingSlash(endPoint) {
-    if (endPoint.charAt(endPoint.length - 1) == "/") {
-        log('Removing trailing forward slash in API endpoint');
-        endPoint = endPoint.substring(0, endPoint.length - 1);
-    }
-    return endPoint;
-}
-
-let endPointUrl;
-
-if (testEndpoint) {
-    log('Testing feature enabled: test endpoint active');
-    endPointUrl = encodeUri(stripTrailingSlash(apiEndpoint) + '/test');
-} else {
-    endPointUrl = encodeUri(stripTrailingSlash(apiEndpoint));
-}
-
 // Function to build URL with required and additional components
 function buildUrl() {
-    let url = endPointUrl;
+    let url = apiEndpoint;
+
+    if (testEndpoint) {
+        log('Testing feature enabled: test endpoint active');
+        url += '/test';
+    }
 
     url += '?timestamp=' + currentTimestampInMilliseconds;
     url += '&session_id=' + sessionId;
     url += '&event_type=' + eventType;
-    url += '&v=' + templateGitHubVersion;
+    url += '&px_v=' + containerVersion.version;
+    url += '&px_dm=' + containerVersion.debugMode;
+    url += '&px_pm=' + containerVersion.previewMode;
     url += '&attr_window=' + urlParamsStorageDurationDays;
     url += '&ref_host=' + referrerHost;
     url += '&ref_path=' + referrerPath;
@@ -152,6 +135,13 @@ function buildUrl() {
 
 // Placeholder URL variable; only build full URL if sending pixel
 let fullUrl;
+
+let cookieContainsAimwelParams, cookieContainsUtmParams;
+
+if (paramsFromCookie) {
+    cookieContainsAimwelParams = paramsFromCookie.indexOf(awId) !== -1;
+    cookieContainsUtmParams = paramsFromCookie.indexOf(utmSource) !== -1;
+}
 
 // Build URL and Send GET request if conditions are met
 if (paramsFromCookie && cookieContainsAimwelParams) {
