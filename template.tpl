@@ -33,7 +33,7 @@ ___TEMPLATE_PARAMETERS___
       {
         "type": "REGEX",
         "args": [
-          "^https:\\/\\/[a-z]+\\.t2\\.aimwel\\.com$"
+          "^https:\\/\\/[a-z]+\\.t2\\.aimwel\\.(com|net)$"
         ],
         "errorMessage": "URL must be of the following format \"https://{{client_name}}.t2.aimwel.com\""
       },
