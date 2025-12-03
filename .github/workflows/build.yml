@@ -1,4 +1,4 @@
-name: Build Template
+name: Version Injection
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  validate-placeholder:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -16,17 +16,20 @@ jobs:
       - name: Check for __GIT_SHA__ placeholder
         run: grep -q "__GIT_SHA__" template.tpl && grep -q "__GIT_SHA__" metadata.yaml
 
-  build:
+  inject-version:
     runs-on: ubuntu-latest
+    needs: validate-placeholder
+    if: always() && (needs.validate-placeholder.result == 'success' || needs.validate-placeholder.result == 'skipped')
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT_AIMWEL_GITHUB_ACTIONS_ACCOUNT }}
           ref: ${{ github.head_ref || github.ref }}
 
       - name: Inject version
         run: |
-          sed -i "s/__GIT_SHA__/${GITHUB_SHA::7}/g" template.tpl 
+          sed -i "s/__GIT_SHA__/${GITHUB_SHA::7}/g" template.tpl
           sed -i "s/__GIT_SHA__/${GITHUB_SHA}/g" metadata.yaml
 
       - name: Commit and push
