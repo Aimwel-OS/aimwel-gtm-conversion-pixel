@@ -18,10 +18,12 @@ versions:
   # Latest version
   - sha: __GIT_SHA__
     changeNotes: |2
-      1. Added pixel version tracking (px_v parameter)
-      2. Added GA cookie support
-      3. Added GitHub Actions workflow for automatic version injection
-      4. Refactored tests
+      1. Renamed pixel version parameter (v → px_v) with automatic version injection via GitHub Actions
+      2. Added container version tracking (cv_v, cv_dm, cv_pm parameters)
+      3. Added GA cookie support (_ga parameter)
+      4. Stricter endpoint URL validation
+      5. Refactored pixel code for clarity and simplicity
+      6. Refactored and expanded test coverage
   # Older versions
   - sha: 658b70185420c533ce0e9e3da5112975e195a158
     changeNotes: Added registration event type
