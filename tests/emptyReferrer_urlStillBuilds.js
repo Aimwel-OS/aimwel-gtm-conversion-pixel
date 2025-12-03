@@ -5,13 +5,13 @@ mockCookies(null, null);
 mockGetUrl(urlData.params_full);
 
 // Override referrer to be empty
-mock('getReferrerUrl', (component) => {
+mock('getReferrerUrl', function(component) {
     return '';
 });
 
 const mockData = getMockData({});
 
-mock('sendPixel', (url, onSuccess, onFailure) => {
+mock('sendPixel', function(url, onSuccess, onFailure) {
     assertThat(url.indexOf('&ref_host=')).isGreaterThan(-1);
     assertThat(url.indexOf('&ref_path=')).isGreaterThan(-1);
     onSuccess();

@@ -13,7 +13,7 @@ const expected = buildExpectedUrl({
     trafficType: 'all'
 });
 
-mock('sendPixel', (url, onSuccess, onFailure) => {
+mock('sendPixel', function(url, onSuccess, onFailure) {
     assertThat(url).isEqualTo(expected);
     onSuccess();
 });

@@ -45,7 +45,7 @@ const referrerData = {
 const cookies = {};
 
 // Base mock data factory
-const getMockData = (overrides) => {
+function getMockData(overrides) {
     const defaults = {
         aimwel_api_endpoint: 'https://test.t2.aimwel.com',
         event_type: 'view',
@@ -64,63 +64,63 @@ const getMockData = (overrides) => {
     }
 
     return defaults;
-};
+}
 
 // Shared mocks (called in each test's setup)
-const setupSharedMocks = () => {
-    mock('getTimestampMillis', () => 1000);
-    mock('generateRandom', () => 1234);
-    mock('getContainerVersion', () => ({
-        version: '1',
-        debugMode: false,
-        previewMode: false
-    }));
+function setupSharedMocks() {
+    mock('getTimestampMillis', function() { return 1000; });
+    mock('generateRandom', function() { return 1234; });
+    mock('getContainerVersion', function() {
+        return {
+            version: '1',
+            debugMode: false,
+            previewMode: false
+        };
+    });
 
-    mock('getReferrerUrl', (component) => {
+    mock('getReferrerUrl', function(component) {
         if (component === 'host') return referrerData.ref_host;
         if (component === 'path') return referrerData.ref_path;
         return '';
     });
 
-    mock('setCookie', (name, value, options) => {
+    mock('setCookie', function(name, value, options) {
         cookies[name] = value;
     });
-};
+}
 
 // Helper to mock getUrl with specific query params
-const mockGetUrl = (queryParams) => {
-    mock('getUrl', (component) => {
+function mockGetUrl(queryParams) {
+    mock('getUrl', function(component) {
         if (component === 'query') return queryParams;
         if (component === 'host') return urlData.curr_host;
         if (component === 'path') return urlData.curr_path;
         return '';
     });
-};
+}
 
 // Helper to mock getCookieValues
-const mockCookies = (sessionId, paramsValue) => {
-    mock('getCookieValues', (name) => {
+function mockCookies(sessionId, paramsValue) {
+    mock('getCookieValues', function(name) {
         if (name === SESSION_COOKIE) return sessionId ? [sessionId] : [undefined];
         if (name === PARAMS_COOKIE) return paramsValue ? [paramsValue] : [undefined];
         return [undefined];
     });
-};
+}
 
 // Helper to build expected URL
-const buildExpectedUrl = (options) => {
-    const {
-        endpoint = 'https://test.t2.aimwel.com',
-        testMode = false,
-        sessionId = '1234.1234',
-        eventType = 'view',
-        attrWindow = 90,
-        jobId = 'job_123',
-        brand = 'test_brand',
-        campaignParams = '',
-        trafficType = 'all'
-    } = options;
+function buildExpectedUrl(options) {
+    var endpoint = options.endpoint || 'https://test.t2.aimwel.com';
+    var testMode = options.testMode || false;
+    var sessionId = options.sessionId || '1234.1234';
+    var eventType = options.eventType || 'view';
+    var attrWindow = options.attrWindow || 90;
+    var jobId = options.jobId || 'job_123';
+    var brand = options.brand || 'test_brand';
+    var campaignParams = options.campaignParams || '';
+    var trafficType = options.trafficType || 'all';
 
-    let url = endpoint + (testMode ? '/test' : '') +
+    var url = endpoint + (testMode ? '/test' : '') +
         '?timestamp=1000' +
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
@@ -142,4 +142,4 @@ const buildExpectedUrl = (options) => {
     url += '&t=' + trafficType;
 
     return url;
-};
+}

@@ -8,7 +8,7 @@ const mockData = getMockData({
     traffic_scope: 'all'
 });
 
-mock('sendPixel', (url, onSuccess, onFailure) => {
+mock('sendPixel', function(url, onSuccess, onFailure) {
     assertThat(url.indexOf('&session_id=existing.session.id')).isGreaterThan(-1);
     onSuccess();
 });

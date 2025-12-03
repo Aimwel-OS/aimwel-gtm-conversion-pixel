@@ -6,7 +6,7 @@ mockGetUrl(urlData.params_full);
 
 const mockData = getMockData({});
 
-mock('sendPixel', (url, onSuccess, onFailure) => {
+mock('sendPixel', function(url, onSuccess, onFailure) {
     onFailure();  // Simulate request failure
 });
 

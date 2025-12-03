@@ -1,6 +1,6 @@
 // Event type: test all values (view, apply, finished_apply, registration)
 
-const testEventType = (eventType) => {
+function testEventType(eventType) {
     setupSharedMocks();
     mockCookies(null, null);
     mockGetUrl(urlData.params_full);
@@ -9,7 +9,7 @@ const testEventType = (eventType) => {
         event_type: eventType
     });
 
-    mock('sendPixel', (url, onSuccess, onFailure) => {
+    mock('sendPixel', function(url, onSuccess, onFailure) {
         assertThat(url.indexOf('&event_type=' + eventType)).isGreaterThan(-1);
         onSuccess();
     });
@@ -18,7 +18,7 @@ const testEventType = (eventType) => {
 
     assertApi('gtmOnSuccess').wasCalled();
     assertApi('sendPixel').wasCalled();
-};
+}
 
 // Test all event types
 testEventType('view');
