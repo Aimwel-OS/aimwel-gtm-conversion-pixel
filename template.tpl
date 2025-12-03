@@ -1,12 +1,4 @@
-___TERMS_OF_SERVICE___
-
-By creating or modifying this file you agree to Google Tag Manager's Community
-Template Gallery Developer Terms of Service available at
-https://developers.google.com/tag-manager/gallery-tos (or such other URL as
-Google may provide), as modified from time to time.
-
-
-___INFO___
+﻿___INFO___
 
 {
   "type": "TAG",
@@ -41,9 +33,9 @@ ___TEMPLATE_PARAMETERS___
       {
         "type": "REGEX",
         "args": [
-          "^https://.*"
+          "^https:\\/\\/[a-z]+\\.t2\\.aimwel\\.com$"
         ],
-        "errorMessage": "URL must start with \"https://\""
+        "errorMessage": "URL must be of the following format \"https://{{client_name}}.t2.aimwel.com\""
       },
       {
         "type": "NON_EMPTY"
@@ -101,12 +93,17 @@ ___TEMPLATE_PARAMETERS___
     ],
     "simpleValueType": true,
     "help": "Select a option to either send all performance conversion events to the endpoint or only Aimwel events. Default is all traffic (as per Aimwel guidelines).",
-    "defaultValue": "all"
+    "defaultValue": "all",
+    "valueValidators": [
+      {
+        "type": "NON_EMPTY"
+      }
+    ]
   },
   {
     "type": "SELECT",
     "name": "url_params_storage_duration_days",
-    "displayName": "Attribution settings to match GA4",
+    "displayName": "Attribution window",
     "macrosInSelect": false,
     "selectItems": [
       {
@@ -123,7 +120,7 @@ ___TEMPLATE_PARAMETERS___
       }
     ],
     "simpleValueType": true,
-    "help": "The time period for the click-through attribution that should be aligned to your GA4 Attribution Setting.",
+    "help": "The time period for the click-through attribution.",
     "defaultValue": 90,
     "valueValidators": [
       {
@@ -215,190 +212,173 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-// Required necessary APIs
+// GTM Sandboxed JavaScript APIs
 const getUrl = require('getUrl');
 const sendPixel = require('sendPixel');
-const encodeUri = require('encodeUri');
 const setCookie = require('setCookie');
-const getCookie = require('getCookieValues');
+const getCookieValues = require('getCookieValues');
 const logToConsole = require('logToConsole');
 const getReferrerUrl = require('getReferrerUrl');
 const generateRandom = require('generateRandom');
 const encodeUriComponent = require('encodeUriComponent');
 const getTimestampMillis = require('getTimestampMillis');
-const currentTimestampInMilliseconds = getTimestampMillis();
+const getContainerVersion = require('getContainerVersion');
 
-// Template Version
-const templateGitHubVersion = '658b701';
 
-// Assign data fields to variables
-const apiEndpoint = data.aimwel_api_endpoint;
+// Constants
+const SESSION_COOKIE = '_aimwel_session';
+const PARAMS_COOKIE = '_aimwel_params';
+const AW_ID = 'aw_id';
+const UTM_SOURCE = 'utm_source';
+const LOG_PREFIX = '[Aimwel] ';
+
+
+// Config
+const endpoint = data.aimwel_api_endpoint;
 const eventType = data.event_type;
 const trafficScope = data.traffic_scope;
-const testEndpoint = data.test;
-const urlParamsStorageDurationDays = (1 * data.url_params_storage_duration_days) || 90;
-const debugging = data.debug;
+const isTestMode = data.test;
+const attrDays = (1 * data.url_params_storage_duration_days) || 90;
+const log = data.debug ? logToConsole : function() {};
 
-// Debugging option
-const log = debugging ? logToConsole : (() => { });
 
-// Set cookie names
-const sessionCookieName = '_aimwel_session';
-const paramsCookieName = '_aimwel_params';
+// Log configuration
+log(LOG_PREFIX + 'Configuration:');
+log(LOG_PREFIX + '  endpoint: ' + endpoint);
+log(LOG_PREFIX + '  event_type: ' + eventType);
+log(LOG_PREFIX + '  traffic_scope: ' + trafficScope);
+log(LOG_PREFIX + '  test_mode: ' + isTestMode);
+log(LOG_PREFIX + '  attribution_days: ' + attrDays);
 
-// Get required cookie and query params values
-const sessionIdFromCookie = getCookie(sessionCookieName)[0];
-let paramsFromCookie = getCookie(paramsCookieName)[0];
-const paramsFromUrl = getUrl('query');
-const currentHost = getUrl('host');
-const currentPath = getUrl('path');
-const referrerHost = getReferrerUrl('host');
-const referrerPath = getReferrerUrl('path');
+data.platformParameters.forEach(function(p) {
+    log(LOG_PREFIX + '  ' + p.key + ': ' + p.value);
+});
 
-// Set parameter name
-const awId = 'aw_id';
-const utmSource = 'utm_source';
 
-// Define cookie parameters
-const cookieOptionsSession = {
+// Cookie configs
+const sessionCookieOpts = {
     domain: 'auto',
     path: '/',
-    'max-age': 30 * 60,
+    'max-age': 1800,
     samesite: 'Lax',
     secure: true
 };
 
-let sessionId = sessionIdFromCookie;
-
-if (!sessionId) {
-    log('Session cookie nonexistent: creating sessionId and session cookie');
-    sessionId = generateRandom(1000000, 9999999) + '.' + generateRandom(1000000, 9999999);
-    setCookie(sessionCookieName, sessionId, cookieOptionsSession);
-} else {
-    log('Session cookie exists: extending lifetime');
-    setCookie(sessionCookieName, sessionId, cookieOptionsSession);
-}
-
-const cookieOptionsParams = {
+const paramsCookieOpts = {
     domain: 'auto',
     path: '/',
-    'max-age': urlParamsStorageDurationDays * 24 * 60 * 60,
+    'max-age': attrDays * 86400,
     samesite: 'Lax',
     secure: true
 };
 
-const urlContainsAimwelParams = paramsFromUrl.indexOf(awId) !== -1;
-const urlContainsUtmParams = paramsFromUrl.indexOf(utmSource) !== -1;
-const urlContainsParams = urlContainsAimwelParams || urlContainsUtmParams;
 
-if (urlContainsParams) {
-    log('Campaign parameters detected in url: creating or overwriting params cookie');
-    setCookie(paramsCookieName, paramsFromUrl, cookieOptionsParams);
-    paramsFromCookie = paramsFromUrl;
+// Helpers
+function contains(str, substr) {
+    return str && str.indexOf(substr) !== -1;
+}
+
+function genSessionId() {
+    return generateRandom(1000000, 9999999) + '.' + generateRandom(1000000, 9999999);
+}
+
+
+// Session management
+const existingSessionId = getCookieValues(SESSION_COOKIE)[0];
+const sessionId = existingSessionId || genSessionId();
+const sessionStatus = existingSessionId ? '[EXISTING]' : '[NEW]';
+
+log(LOG_PREFIX + 'Session ' + sessionStatus + ': ' + sessionId);
+
+setCookie(SESSION_COOKIE, sessionId, sessionCookieOpts);
+
+
+// Campaign params management
+const campaignParamsBefore = getCookieValues(PARAMS_COOKIE)[0];
+
+log(LOG_PREFIX + 'Campaign params (before): ' + (campaignParamsBefore || '(empty)'));
+
+const urlParams = getUrl('query');
+const urlHasParams = contains(urlParams, AW_ID) || contains(urlParams, UTM_SOURCE);
+
+let campaignParams = campaignParamsBefore;
+
+if (urlHasParams) {
+    setCookie(PARAMS_COOKIE, urlParams, paramsCookieOpts);
+
+    campaignParams = urlParams;
+
+    log(LOG_PREFIX + 'Campaign params (after): ' + campaignParams + ' [UPDATED FROM URL]');
+} else if (campaignParams) {
+    log(LOG_PREFIX + 'Campaign params (after): ' + campaignParams + ' [UNCHANGED]');
 } else {
-    if (!paramsFromCookie) {
-        log('Campaign params cookie nonexistent and URL does not contain campaign params: continuing without');
-    } else {
-        log('Campaign params cookie exists: continuing with existing');
-    }
+    log(LOG_PREFIX + 'Campaign params (after): (empty) [NO PARAMS]');
 }
 
-let cookieContainsAimwelParams, cookieContainsUtmParams, cookieContainsParams;
 
-if (paramsFromCookie) {
-    cookieContainsAimwelParams = paramsFromCookie.indexOf(awId) !== -1;
-    cookieContainsUtmParams = paramsFromCookie.indexOf(utmSource) !== -1;
-    cookieContainsParams = cookieContainsAimwelParams || cookieContainsUtmParams;
-}
+// Flags
+const hasAwId = contains(campaignParams, AW_ID);
+const hasUtm = contains(campaignParams, UTM_SOURCE);
 
-// Function to strip trailing slash from endpoint url input field value
-function stripTrailingSlash(endPoint) {
-    if (endPoint.charAt(endPoint.length - 1) == "/") {
-        log('Removing trailing forward slash in API endpoint');
-        endPoint = endPoint.substring(0, endPoint.length - 1);
-    }
-    return endPoint;
-}
 
-let endPointUrl;
-
-if (testEndpoint) {
-    log('Testing feature enabled: test endpoint active');
-    endPointUrl = encodeUri(stripTrailingSlash(apiEndpoint) + '/test');
-} else {
-    endPointUrl = encodeUri(stripTrailingSlash(apiEndpoint));
-}
-
-// Function to build URL with required and additional components
+// Build URL
 function buildUrl() {
-    let url = endPointUrl;
+    const cv = getContainerVersion();
 
-    url += '?timestamp=' + currentTimestampInMilliseconds;
-    url += '&session_id=' + sessionId;
-    url += '&event_type=' + eventType;
-    url += '&v=' + templateGitHubVersion;
-    url += '&attr_window=' + urlParamsStorageDurationDays;
-    url += '&ref_host=' + referrerHost;
-    url += '&ref_path=' + referrerPath;
-    url += '&curr_host=' + currentHost;
-    url += '&curr_path=' + currentPath;
+    let url = endpoint + (isTestMode ? '/test' : '') +
+        '?timestamp=' + getTimestampMillis() +
+        '&session_id=' + sessionId +
+        '&event_type=' + eventType +
+        '&px_v=' + cv.version +
+        '&px_dm=' + cv.debugMode +
+        '&px_pm=' + cv.previewMode +
+        '&attr_window=' + attrDays +
+        '&ref_host=' + getReferrerUrl('host') +
+        '&ref_path=' + getReferrerUrl('path') +
+        '&curr_host=' + getUrl('host') +
+        '&curr_path=' + getUrl('path');
 
-    data.platformParameters.forEach(param => {
-      if (param.key) {
-          if (param.key === 'job_id' && !param.value) {
-              param.value = 'unknown';
-              log('The job id parameter value seems to be missing/empty, this is a required value: please check how the job id value is set and/or if it is available at the moment this tag is fired');
-          }
-
-          if (param.value) {
-              url += '&' + encodeUriComponent(param.key) + '=' + encodeUriComponent(param.value);
-          }
-        }
+    data.platformParameters.forEach(function(p) {
+        url += '&' + encodeUriComponent(p.key) + '=' + encodeUriComponent(p.value);
     });
 
-    if (paramsFromCookie) {
-        url += '&' + paramsFromCookie;
-    } else {
-        log('Campaign params omitted in URL builder due to nonexistent campaign params cookie or nonexistent url campaign parameters');
+    if (campaignParams) {
+        url += '&' + campaignParams;
     }
 
     return url;
 }
 
-// Placeholder URL variable; only build full URL if sending pixel
-let fullUrl;
 
-// Build URL and Send GET request if conditions are met
-if (paramsFromCookie && cookieContainsAimwelParams) {
-    fullUrl = buildUrl();
-    
-    if (testEndpoint) {
-      log('Sending pixel to test endpoint: Aimwel campaign');
-    } else {
-        log('Sending pixel: Aimwel campaign');
-    }
-  
-    sendPixel(fullUrl + '&t=aimwel', data.gtmOnSuccess, data.gtmOnFailure);
-    log('URL sent: ' + fullUrl + '&t=aimwel');
+// Send pixel
+function send(trafficType) {
+    const url = buildUrl() + '&t=' + trafficType;
+
+    log(LOG_PREFIX + 'Traffic type: ' + trafficType);
+    log(LOG_PREFIX + 'Request URL: ' + url);
+
+    sendPixel(url, function() {
+        log(LOG_PREFIX + 'Result: SUCCESS');
+
+        data.gtmOnSuccess();
+    }, function() {
+        log(LOG_PREFIX + 'Result: FAILED');
+
+        data.gtmOnFailure();
+    });
+}
+
+
+// Execute
+if (hasAwId) {
+    send('aimwel');
+} else if (trafficScope === 'all' && (hasUtm || !campaignParams)) {
+    send('all');
 } else {
-    if (trafficScope == 'all' && (cookieContainsUtmParams || !paramsFromCookie)) {
-        fullUrl = buildUrl();
-        
-        if (testEndpoint) {
-          log('Sending pixel to test endpoint: all traffic allowed');
-        } else {
-          log('Sending pixel: all traffic allowed');
-        }
+    log(LOG_PREFIX + 'Traffic type: (none)');
+    log(LOG_PREFIX + 'Result: NOT SENT - traffic scope is "aimwel" but no aw_id found');
 
-        sendPixel(fullUrl + '&t=all', data.gtmOnSuccess, data.gtmOnFailure);
-        log('URL sent: ' + fullUrl + '&t=all');
-    } else if (trafficScope == 'aimwel') {
-        log('Not sending pixel: limited traffic allowed');
-        data.gtmOnSuccess();
-    } else {
-        log('Not sending pixel: no campaign params present and traffic scoping incorrect/unknown');
-        data.gtmOnSuccess();
-    }
+    data.gtmOnSuccess();
 }
 
 
@@ -627,6 +607,16 @@ ___WEB_PERMISSIONS___
       "isEditedByUser": true
     },
     "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "read_container_data",
+        "versionId": "1"
+      },
+      "param": []
+    },
+    "isRequired": true
   }
 ]
 
@@ -634,302 +624,764 @@ ___WEB_PERMISSIONS___
 ___TESTS___
 
 scenarios:
-- name: newUser+BothUrlParams&NoCookieParams
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  debug: true,\n});\n\
-    \nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
-    \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
-    \ component => {\n  if (component === 'query') {\n    return getUrlData.params_full;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);  \n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: newUser+UtmUrlParams&NoCookieParamsAllTraffic
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
-    \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
-    \ component => {\n  if (component === 'query') {\n    return getUrlData.params_utm;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);  \n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: newUser+UtmUrlParams&NoCookieParamsAimwelTraffic
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
-    \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
-    \ component => {\n  if (component === 'query') {\n    return getUrlData.params_utm;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);  \n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: newUser+NoUrlParams&NoCookieParams
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
-    \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
-    \ component => {\n  if (component === 'query') {\n    return getUrlData.params_empty;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);  \n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasNotCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: returningUser+BothUrlParams&BothCookieParams
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_alt_full];\n  }\n\
-    });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
-    \ getUrlData.params_full;\n  } else if (component === 'host') {\n    return getUrlData.curr_host;\n\
-    \  } else if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"\
-    getUrl failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component\
-    \ === 'host') {\n    return getReferrerData.ref_host;\n  } else if (component\
-    \ === 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer\
-    \ failed\");\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name\
-    \ === session) {\n    cookies[name] = value;\n  }\n  if (name === params) {\n\
-    \    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess,\
-    \ gtmOnFailure) => {\n  assertThat(url).isEqualTo(expected);\n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: returningUser+UtmUrlParams&UtmCookieParams
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=test&utm_medium=test&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
-    \  }\n  if (name === params) { \n    return getUrlData.params_utm;\n  }\n});\n\
-    \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_utm;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);  \n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: returningUser+NoUrlParams&AwIdCookieParams
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&aw_id=456&t=aimwel';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_alt_awid];\n  }\n\
-    });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
-    \ getUrlData.params_empty;\n  } else if (component === 'host') {\n    return getUrlData.curr_host;\n\
-    \  } else if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"\
-    getUrl failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component\
-    \ === 'host') {\n    return getReferrerData.ref_host;\n  } else if (component\
-    \ === 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer\
-    \ failed\");\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name\
-    \ === session) {\n    cookies[name] = value;\n  }\n  if (name === params) {\n\
-    \    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess,\
-    \ gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n \
-    \ gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
-    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionBuildUrlWithoutCookieParamsAllTraffic
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
-    });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
-    \ getUrlData.params_empty;\n  } else if (component === 'host') {\n    return getUrlData.curr_host;\n\
-    \  } else if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"\
-    getUrl failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component\
-    \ === 'host') {\n    return getReferrerData.ref_host;\n  } else if (component\
-    \ === 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer\
-    \ failed\");\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name\
-    \ === session) {\n    cookies[name] = value;\n  }\n  if (name === params) {\n\
-    \    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess,\
-    \ gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n \
-    \ gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
-    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionBuildUrlWithoutCookieParamsAimwelTraffic
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
-    });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
-    \ getUrlData.params_empty;\n  } else if (component === 'host') {\n    return getUrlData.curr_host;\n\
-    \  } else if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"\
-    getUrl failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component\
-    \ === 'host') {\n    return getReferrerData.ref_host;\n  } else if (component\
-    \ === 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer\
-    \ failed\");\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name\
-    \ === session) {\n    cookies[name] = value;\n  }\n  if (name === params) {\n\
-    \    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess,\
-    \ gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n \
-    \ gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
-    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionBuildUrlWithUtmCookieParamsAllTraffic
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_utm];\n  }\n});\n\
-    \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_alt_utm;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);\n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionBuildUrlWithAwIdCookieParamsAllTraffic
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'all',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&aw_id=456&t=aimwel';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_full];\n  }\n});\n\
-    \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_alt_full;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);\n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionBuildUrlWithUtmCookieParamsAimwelTraffic
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  traffic_scope: 'aimwel',\n\
-    \  debug: true,\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=5678.5678&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&utm_source=example&utm_medium=example&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['5678.5678'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_utm];\n  }\n});\n\
-    \nmock('getUrl', component => {\n  if (component === 'query') {\n    return getUrlData.params_alt_utm;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);\n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionStripTrailingSlash
-  code: "const mockData = getMockData({\n  aimwel_api_endpoint: 'https://www.example.com/',\n\
-    \  event_type: 'view',\n  traffic_scope: 'all',\n  debug: true,\n});\n\nconst\
-    \ expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
-    });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
-    \ getUrlData.params_empty;\n  } else if (component === 'host') {\n    return getUrlData.curr_host;\n\
-    \  } else if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"\
-    getUrl failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component\
-    \ === 'host') {\n    return getReferrerData.ref_host;\n  } else if (component\
-    \ === 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer\
-    \ failed\");\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name\
-    \ === session) {\n    cookies[name] = value;\n  }\n  if (name === params) {\n\
-    \    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess,\
-    \ gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n \
-    \ gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
-    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionTestEndpointActive
-  code: "const mockData = getMockData({\n  aimwel_api_endpoint: 'https://www.example.com/',\n\
-    \  event_type: 'view',\n  traffic_scope: 'all',\n  test: true,\n  debug: true,\n\
-    });\n\nconst expected = 'https://www.example.com/test?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=test_id_123&brand=test_for_template&t=all';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return ['1234.1234'];\n\
-    \  }\n  if (name === params) { \n    return [getUrlData.params_empty];\n  }\n\
-    });\n\nmock('getUrl', component => {\n  if (component === 'query') {\n    return\
-    \ getUrlData.params_empty;\n  } else if (component === 'host') {\n    return getUrlData.curr_host;\n\
-    \  } else if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"\
-    getUrl failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component\
-    \ === 'host') {\n    return getReferrerData.ref_host;\n  } else if (component\
-    \ === 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer\
-    \ failed\");\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name\
-    \ === session) {\n    cookies[name] = value;\n  }\n  if (name === params) {\n\
-    \    cookies[name] = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess,\
-    \ gtmOnFailure) => {              \n  assertThat(url).isEqualTo(expected);\n \
-    \ gtmOnSuccess();\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
-    assertApi('setCookie').wasCalledWith(session, cookies[session], cookieOptionsSession);\n\
-    assertApi('setCookie').wasNotCalledWith(params, cookies[params], cookieOptionsParams);"
-- name: unitTestFunctionBuildUrlEmptyJobId
-  code: "const mockData = getMockData({\n  event_type: 'view',\n  debug: true,\n \
-    \ platformParameters: [\n      {\n        key: 'job_id',\n        value: undefined\n\
-    \      }\n    ],\n});\n\nconst expected = 'https://www.example.com?timestamp=321&session_id=1234.1234&event_type=view&v=964964e&attr_window=90&ref_host=google.com&ref_path=/job_123.html&curr_host=example.com&curr_path=/job_123.html&job_id=unknown&utm_source=test&utm_medium=test&aw_id=123&t=aimwel';\n\
-    \nmock('getCookieValues', (name) => {\n  if (name === session) {\n    return [undefined];\n\
-    \  }\n  if (name === params) { \n    return [undefined];\n  }\n});\n\nmock('getUrl',\
-    \ component => {\n  if (component === 'query') {\n    return getUrlData.params_full;\n\
-    \  } else if (component === 'host') {\n    return getUrlData.curr_host;\n  } else\
-    \ if (component === 'path') {\n    return getUrlData.curr_path;\n  } fail(\"getUrl\
-    \ failed\");\n});\n\nmock('getReferrerUrl', component => {\n  if (component ===\
-    \ 'host') {\n    return getReferrerData.ref_host;\n  } else if (component ===\
-    \ 'path') {\n    return getReferrerData.ref_path;\n  } fail(\"getReferrer failed\"\
-    );\n});\n\nmock('setCookie', (name, value, options) => {\n  if (name === session)\
-    \ {\n    cookies[name] = value;\n  }\n  if (name === params) {\n    cookies[name]\
-    \ = value;\n  }\n});\n\nmock('sendPixel', (url, gtmOnSuccess, gtmOnFailure) =>\
-    \ {              \n  assertThat(url).isEqualTo(expected);\n  gtmOnSuccess();\n\
-    });\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\nassertApi('setCookie').wasCalledWith(session,\
-    \ cookies[session], cookieOptionsSession);\nassertApi('setCookie').wasCalledWith(params,\
-    \ cookies[params], cookieOptionsParams);"
-setup: "const logToConsole = require(\"logToConsole\");\n\nconst session = '_aimwel_session';\n\
-  const params = '_aimwel_params';\n\nconst getMockData = (obj) => {\n  const mockData\
-  \ = {\n    aimwel_api_endpoint: 'https://www.example.com',\n    platformParameters:\
-  \ [\n      {\n        key: 'job_id',\n        value: 'test_id_123'\n      },\n \
-  \     {\n        key: 'brand',\n        value: 'test_for_template'\n      }\n  \
-  \  ],\n    url_params_storage_duration_days: \"90\",\n  };\n  \n  // add new keys\
-  \ or override existing keys with input obj\n  for (var key in obj) {\n    mockData[key]\
-  \ = obj[key];\n  }\n  \n  return mockData;\n};\n\nconst getUrlData = {\n  params_full:\
-  \ 'utm_source=test&utm_medium=test&aw_id=123',\n  params_awid: 'aw_id=123',\n  params_utm:\
-  \ 'utm_source=test&utm_medium=test',\n  params_alt_full: 'utm_source=example&utm_medium=example&aw_id=456',\n\
-  \  params_alt_awid: 'aw_id=456',\n  params_alt_utm: 'utm_source=example&utm_medium=example',\n\
-  \  params_empty: '',\n  curr_host: 'example.com',\n  curr_path: '/job_123.html',\n\
-  };\n\nconst getReferrerData = {\n  ref_host: 'google.com',\n  ref_path: '/job_123.html',\n\
-  };\n\nconst cookies = {};\n\nmock('getTimestampMillis', () => 321);\nmock('generateRandom',\
-  \ () => 1234);\n\nconst cookieOptionsSession = {\n    domain: 'auto',\n    path:\
-  \ '/',\n    'max-age': 30 * 60,\n    samesite: 'Lax',\n    secure: true\n  };\n\n\
-  const cookieOptionsParams = {\n    domain: 'auto',\n    path: '/',\n    'max-age':\
-  \ 90 * 24 * 60 * 60,\n    samesite: 'Lax',\n    secure: true\n  };"
+- name: attributionWindow_allValues
+  code: |-
+    // Attribution window: test all values (30, 60, 90 days)
+
+    function testAttributionWindow(days) {
+        setupSharedMocks();
+        mockCookies(null, null);
+        mockGetUrl(urlData.params_full);
+
+        const mockData = getMockData({
+            url_params_storage_duration_days: '' + days
+        });
+
+        const expectedCookieOptions = {
+            domain: 'auto',
+            path: '/',
+            'max-age': days * 24 * 60 * 60,
+            samesite: 'Lax',
+            secure: true
+        };
+
+        mock('sendPixel', function(url, onSuccess, onFailure) {
+            assertThat(url.indexOf('&attr_window=' + days)).isGreaterThan(-1);
+            onSuccess();
+        });
+
+        runCode(mockData);
+
+        assertApi('gtmOnSuccess').wasCalled();
+        assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_full, expectedCookieOptions);
+    }
+
+    // Test all attribution window values
+    testAttributionWindow(30);
+    testAttributionWindow(60);
+    testAttributionWindow(90);
+- name: emptyReferrer_urlStillBuilds
+  code: |
+    // Empty referrer: URL should still build correctly
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_full);
+
+    // Override referrer to be empty
+    mock('getReferrerUrl', function(component) {
+        return '';
+    });
+
+    const mockData = getMockData({});
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url.indexOf('&ref_host=')).isGreaterThan(-1);
+        assertThat(url.indexOf('&ref_path=')).isGreaterThan(-1);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: eventType_allValues
+  code: |
+    // Event type: test all values (view, apply, finished_apply, registration)
+
+    function testEventType(eventType) {
+        setupSharedMocks();
+        mockCookies(null, null);
+        mockGetUrl(urlData.params_full);
+
+        const mockData = getMockData({
+            event_type: eventType
+        });
+
+        mock('sendPixel', function(url, onSuccess, onFailure) {
+            assertThat(url.indexOf('&event_type=' + eventType)).isGreaterThan(-1);
+            onSuccess();
+        });
+
+        runCode(mockData);
+
+        assertApi('gtmOnSuccess').wasCalled();
+        assertApi('sendPixel').wasCalled();
+    }
+
+    // Test all event types
+    testEventType('view');
+    testEventType('apply');
+    testEventType('finished_apply');
+    testEventType('registration');
+- name: newUser_awIdAndUtm_noCookie_trafficAimwel_sendsAimwel
+  code: |
+    // New user with aw_id + utm in URL, traffic_scope=aimwel -> sends aimwel (aw_id present)
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_full);
+
+    const mockData = getMockData({
+        traffic_scope: 'aimwel'
+    });
+
+    const expected = buildExpectedUrl({
+        campaignParams: urlData.params_full,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: newUser_awIdAndUtm_noCookie_trafficAll_sendsAimwel
+  code: |
+    // New user with aw_id + utm params in URL -> sends as aimwel traffic
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_full);
+
+    const mockData = getMockData({});
+
+    const expected = buildExpectedUrl({
+        campaignParams: urlData.params_full,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasCalledWith(SESSION_COOKIE, cookies[SESSION_COOKIE], cookieOptionsSession);
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_full, cookieOptionsParams);
+- name: newUser_awIdOnly_noCookie_trafficAimwel_sendsAimwel
+  code: |
+    // New user with only aw_id in URL, traffic_scope=aimwel -> sends aimwel
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_awid);
+
+    const mockData = getMockData({
+        traffic_scope: 'aimwel'
+    });
+
+    const expected = buildExpectedUrl({
+        campaignParams: urlData.params_awid,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: newUser_awIdOnly_noCookie_trafficAll_sendsAimwel
+  code: |
+    // New user with only aw_id in URL (no utm) -> sends as aimwel traffic
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_awid);
+
+    const mockData = getMockData({});
+
+    const expected = buildExpectedUrl({
+        campaignParams: urlData.params_awid,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_awid, cookieOptionsParams);
+- name: newUser_noParams_noCookie_trafficAimwel_notSent
+  code: |
+    // New user with no URL params, traffic_scope=aimwel -> does NOT send
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'aimwel'
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasNotCalled();
+- name: newUser_noParams_noCookie_trafficAll_sendsAll
+  code: |
+    // New user with no URL params, traffic_scope=all -> sends as all traffic
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        campaignParams: '',
+        trafficType: 'all'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasNotCalledWith(PARAMS_COOKIE, cookies[PARAMS_COOKIE], cookieOptionsParams);
+- name: newUser_utmOnly_noCookie_trafficAimwel_notSent
+  code: |
+    // New user with only utm params, traffic_scope=aimwel -> does NOT send (no aw_id)
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_utm);
+
+    const mockData = getMockData({
+        traffic_scope: 'aimwel'
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasNotCalled();
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_utm, cookieOptionsParams);
+- name: newUser_utmOnly_noCookie_trafficAll_sendsAll
+  code: |
+    // New user with only utm params, traffic_scope=all -> sends as all traffic
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_utm);
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        campaignParams: urlData.params_utm,
+        trafficType: 'all'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_utm, cookieOptionsParams);
+- name: returningUser_awIdAndUtmUrl_awIdAndUtmCookie_trafficAll_sendsAimwel
+  code: |
+    // Returning user: same aw_id+utm in both URL and cookie -> sends aimwel, cookie updated
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_alt_full);  // Cookie has old params
+    mockGetUrl(urlData.params_full);  // URL has new params
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_full,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_full, cookieOptionsParams);
+- name: returningUser_awIdAndUtmUrl_utmCookie_trafficAll_sendsAimwel
+  code: |
+    // Returning user: URL params override cookie params, sends aimwel
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_alt_utm);  // Cookie has old utm params
+    mockGetUrl(urlData.params_full);  // URL has new aw_id + utm
+
+    const mockData = getMockData({});
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_full,  // URL params used, not cookie
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_full, cookieOptionsParams);
+- name: returningUser_awIdUrl_utmCookie_trafficAll_sendsAimwel
+  code: |
+    // Returning user: aw_id URL overwrites utm cookie -> sends aimwel (gains aw_id)
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_utm);  // Cookie has only utm
+    mockGetUrl(urlData.params_awid);  // URL has aw_id
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_awid,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_awid, cookieOptionsParams);
+- name: returningUser_noUrl_awIdAndUtmCookie_trafficAimwel_sendsAimwel
+  code: |
+    // Returning user: no URL params, aw_id+utm in cookie, traffic_scope=aimwel -> sends aimwel
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_full);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'aimwel'
+    });
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_full,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: returningUser_noUrl_awIdAndUtmCookie_trafficAll_sendsAimwel
+  code: |
+    // Returning user: no URL params, aw_id+utm in cookie -> sends aimwel
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_full);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_full,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: returningUser_noUrl_awIdCookie_trafficAimwel_sendsAimwel
+  code: |
+    // Returning user: no URL params, aw_id only in cookie, traffic_scope=aimwel -> sends aimwel
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_awid);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'aimwel'
+    });
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_awid,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: returningUser_noUrl_awIdCookie_trafficAll_sendsAimwel
+  code: |
+    // Returning user: no URL params, aw_id in cookie -> sends as aimwel
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_awid);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({});
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_awid,
+        trafficType: 'aimwel'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: returningUser_noUrl_utmCookie_trafficAimwel_notSent
+  code: |
+    // Returning user: no URL params, utm only in cookie, traffic_scope=aimwel -> NOT sent
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_utm);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'aimwel'
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasNotCalled();
+- name: returningUser_noUrl_utmCookie_trafficAll_sendsAll
+  code: |
+    // Returning user: no URL params, utm only in cookie, traffic_scope=all -> sends all
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_utm);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_utm,
+        trafficType: 'all'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+- name: returningUser_utmUrl_awIdCookie_trafficAll_sendsAll
+  code: |
+    // Returning user: utm URL overwrites aw_id cookie -> sends all (loses aw_id!)
+    // This is an important edge case: new UTM params replace old aw_id attribution
+
+    setupSharedMocks();
+    mockCookies('existing.session', urlData.params_awid);  // Cookie has aw_id
+    mockGetUrl(urlData.params_utm);  // URL has only utm (no aw_id)
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        sessionId: 'existing.session',
+        campaignParams: urlData.params_utm,  // UTM from URL, aw_id lost
+        trafficType: 'all'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+    assertApi('setCookie').wasCalledWith(PARAMS_COOKIE, urlData.params_utm, cookieOptionsParams);
+- name: sendPixelFailure_callsGtmOnFailure
+  code: |
+    // When sendPixel fails, gtmOnFailure should be called
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_full);
+
+    const mockData = getMockData({});
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        onFailure();  // Simulate request failure
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnFailure').wasCalled();
+    assertApi('gtmOnSuccess').wasNotCalled();
+- name: sessionExtended_returningUser
+  code: |
+    // Returning user: session cookie is extended (setCookie called with existing session)
+
+    setupSharedMocks();
+    mockCookies('existing.session.id', null);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        traffic_scope: 'all'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url.indexOf('&session_id=existing.session.id')).isGreaterThan(-1);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('setCookie').wasCalledWith(SESSION_COOKIE, 'existing.session.id', cookieOptionsSession);
+- name: testMode_appendsTestPath
+  code: |
+    // Test mode enabled -> /test path appended to endpoint
+
+    setupSharedMocks();
+    mockCookies(null, null);
+    mockGetUrl(urlData.params_empty);
+
+    const mockData = getMockData({
+        test: true,
+        traffic_scope: 'all'
+    });
+
+    const expected = buildExpectedUrl({
+        testMode: true,
+        campaignParams: '',
+        trafficType: 'all'
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+        assertThat(url).isEqualTo(expected);
+        assertThat(url.indexOf('/test?')).isGreaterThan(-1);
+        onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('sendPixel').wasCalled();
+setup: |-
+  // Shared test setup for GTM template tests
+
+  const logToConsole = require("logToConsole");
+
+  // Cookie names
+  const SESSION_COOKIE = '_aimwel_session';
+  const PARAMS_COOKIE = '_aimwel_params';
+
+  // Cookie options (must match pixel.js)
+  const cookieOptionsSession = {
+      domain: 'auto',
+      path: '/',
+      'max-age': 1800,
+      samesite: 'Lax',
+      secure: true
+  };
+
+  const cookieOptionsParams = {
+      domain: 'auto',
+      path: '/',
+      'max-age': 90 * 24 * 60 * 60,
+      samesite: 'Lax',
+      secure: true
+  };
+
+  // Test data
+  const urlData = {
+      params_full: 'utm_source=test&utm_medium=test&aw_id=123',
+      params_awid: 'aw_id=123',
+      params_utm: 'utm_source=test&utm_medium=test',
+      params_alt_full: 'utm_source=example&utm_medium=example&aw_id=456',
+      params_alt_awid: 'aw_id=456',
+      params_alt_utm: 'utm_source=example&utm_medium=example',
+      params_empty: '',
+      curr_host: 'example.com',
+      curr_path: '/job_123.html',
+  };
+
+  const referrerData = {
+      ref_host: 'google.com',
+      ref_path: '/search',
+  };
+
+  // Cookie storage for tests
+  const cookies = {};
+
+  // Base mock data factory
+  function getMockData(overrides) {
+      const defaults = {
+          aimwel_api_endpoint: 'https://test.t2.aimwel.com',
+          event_type: 'view',
+          traffic_scope: 'all',
+          test: false,
+          debug: true,
+          url_params_storage_duration_days: '90',
+          platformParameters: [
+              { key: 'job_id', value: 'job_123' },
+              { key: 'brand', value: 'test_brand' }
+          ]
+      };
+
+      for (var key in overrides) {
+          defaults[key] = overrides[key];
+      }
+
+      return defaults;
+  }
+
+  // Shared mocks (called in each test's setup)
+  function setupSharedMocks() {
+      mock('getTimestampMillis', function() { return 1000; });
+      mock('generateRandom', function() { return 1234; });
+      mock('getContainerVersion', function() {
+          return {
+              version: '1',
+              debugMode: false,
+              previewMode: false
+          };
+      });
+
+      mock('getReferrerUrl', function(component) {
+          if (component === 'host') return referrerData.ref_host;
+          if (component === 'path') return referrerData.ref_path;
+          return '';
+      });
+
+      mock('setCookie', function(name, value, options) {
+          cookies[name] = value;
+      });
+  }
+
+  // Helper to mock getUrl with specific query params
+  function mockGetUrl(queryParams) {
+      mock('getUrl', function(component) {
+          if (component === 'query') return queryParams;
+          if (component === 'host') return urlData.curr_host;
+          if (component === 'path') return urlData.curr_path;
+          return '';
+      });
+  }
+
+  // Helper to mock getCookieValues
+  function mockCookies(sessionId, paramsValue) {
+      mock('getCookieValues', function(name) {
+          if (name === SESSION_COOKIE) return sessionId ? [sessionId] : [undefined];
+          if (name === PARAMS_COOKIE) return paramsValue ? [paramsValue] : [undefined];
+          return [undefined];
+      });
+  }
+
+  // Helper to build expected URL
+  function buildExpectedUrl(options) {
+      var endpoint = options.endpoint || 'https://test.t2.aimwel.com';
+      var testMode = options.testMode || false;
+      var sessionId = options.sessionId || '1234.1234';
+      var eventType = options.eventType || 'view';
+      var attrWindow = options.attrWindow || 90;
+      var jobId = options.jobId || 'job_123';
+      var brand = options.brand || 'test_brand';
+      var campaignParams = options.campaignParams || '';
+      var trafficType = options.trafficType || 'all';
+
+      var url = endpoint + (testMode ? '/test' : '') +
+          '?timestamp=1000' +
+          '&session_id=' + sessionId +
+          '&event_type=' + eventType +
+          '&px_v=1' +
+          '&px_dm=false' +
+          '&px_pm=false' +
+          '&attr_window=' + attrWindow +
+          '&ref_host=' + referrerData.ref_host +
+          '&ref_path=' + referrerData.ref_path +
+          '&curr_host=' + urlData.curr_host +
+          '&curr_path=' + urlData.curr_path +
+          '&job_id=' + jobId +
+          '&brand=' + brand;
+
+      if (campaignParams) {
+          url += '&' + campaignParams;
+      }
+
+      url += '&t=' + trafficType;
+
+      return url;
+  }
 
 
 ___NOTES___
 
 Created on 01/11/2023, 16:22:29
-
 
 
