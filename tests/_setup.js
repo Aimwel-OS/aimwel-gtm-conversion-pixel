@@ -11,7 +11,6 @@ const GA_COOKIE = '_ga';
 const cookieOptionsSession = {
     domain: 'auto',
     path: '/',
-    'max-age': 1800,
     samesite: 'Lax',
     secure: true
 };

@@ -226,7 +226,7 @@ const getContainerVersion = require('getContainerVersion');
 
 
 // Constants
-const PIXEL_VERSION = 'fc2a508';
+const PIXEL_VERSION = '__GIT_SHA__';
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
 const GA_COOKIE = '_ga';
@@ -262,7 +262,6 @@ data.platformParameters.forEach(function(p) {
 const sessionCookieOpts = {
     domain: 'auto',
     path: '/',
-    'max-age': 1800,
     samesite: 'Lax',
     secure: true
 };
@@ -1342,7 +1341,6 @@ setup: |
   const cookieOptionsSession = {
       domain: 'auto',
       path: '/',
-      'max-age': 1800,
       samesite: 'Lax',
       secure: true
   };
@@ -1460,7 +1458,7 @@ setup: |
           '?timestamp=1000' +
           '&session_id=' + sessionId +
           '&event_type=' + eventType +
-          '&px_v=fc2a508' +
+          '&px_v=__GIT_SHA__' +
           '&cv_id=GTM-TEST123' +
           '&cv_v=1' +
           '&cv_env=' +

@@ -48,7 +48,6 @@ data.platformParameters.forEach(function(p) {
 const sessionCookieOpts = {
     domain: 'auto',
     path: '/',
-    'max-age': 1800,
     samesite: 'Lax',
     secure: true
 };
