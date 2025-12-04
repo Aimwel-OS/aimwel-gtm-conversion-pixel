@@ -129,7 +129,9 @@ function buildUrl() {
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
         '&px_v=' + PIXEL_VERSION +
+        '&cv_id=' + cv.containerId +
         '&cv_v=' + cv.version +
+        '&cv_env=' + (cv.environmentName || '') +
         '&cv_dm=' + cv.debugMode +
         '&cv_pm=' + cv.previewMode +
         '&attr_window=' + attrDays +

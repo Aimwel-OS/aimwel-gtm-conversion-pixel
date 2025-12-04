@@ -73,7 +73,9 @@ function setupSharedMocks() {
     mock('generateRandom', function() { return 1234; });
     mock('getContainerVersion', function() {
         return {
+            containerId: 'GTM-TEST123',
             version: '1',
+            environmentName: '',
             debugMode: false,
             previewMode: false
         };
@@ -128,7 +130,9 @@ function buildExpectedUrl(options) {
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
         '&px_v=__GIT_SHA__' +
+        '&cv_id=GTM-TEST123' +
         '&cv_v=1' +
+        '&cv_env=' +
         '&cv_dm=false' +
         '&cv_pm=false' +
         '&attr_window=' + attrWindow +
