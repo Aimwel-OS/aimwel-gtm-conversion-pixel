@@ -1,0 +1,51 @@
+name: Version Injection
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-pixel-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check pixel.js matches template.tpl
+        run: |
+          sed -n '/^___SANDBOXED_JS_FOR_WEB_TEMPLATE___$/,/^___WEB_PERMISSIONS___$/{ /^___/d; p; }' template.tpl | sed '/^$/d' > /tmp/template_js.txt
+          sed '/^$/d' pixel.js > /tmp/pixel_js.txt
+          diff /tmp/pixel_js.txt /tmp/template_js.txt
+
+  validate-placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for __GIT_SHA__ placeholder
+        run: grep -q "__GIT_SHA__" template.tpl && grep -q "__GIT_SHA__" metadata.yaml
+
+  inject-version:
+    runs-on: ubuntu-latest
+    needs: [validate-pixel-sync, validate-placeholder]
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Inject version
+        run: |
+          sed -i "s/__GIT_SHA__/${GITHUB_SHA::7}/g" template.tpl
+          sed -i "s/__GIT_SHA__/${GITHUB_SHA}/g" metadata.yaml
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add template.tpl metadata.yaml
+          git commit -m "Inject version ${GITHUB_SHA::7} [ci skip]"
+          git push
