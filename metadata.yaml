@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root
 versions:
   # Latest version
-  - sha: __GIT_SHA__
+  - sha: d20d8c00d1633eefba35fa22f916bf4c214da811
     changeNotes: Changed session cookie to browser session-based (expires on browser close instead of 30-minute sliding window)
   # Older versions
   - sha: fc2a5089e03a41d94b29a48305fb4f1e8eb1cbae
