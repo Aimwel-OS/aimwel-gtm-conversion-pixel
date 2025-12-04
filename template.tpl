@@ -226,7 +226,7 @@ const getContainerVersion = require('getContainerVersion');
 
 
 // Constants
-const PIXEL_VERSION = '__GIT_SHA__';
+const PIXEL_VERSION = 'fc2a508';
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
 const GA_COOKIE = '_ga';
@@ -1460,7 +1460,7 @@ setup: |
           '?timestamp=1000' +
           '&session_id=' + sessionId +
           '&event_type=' + eventType +
-          '&px_v=__GIT_SHA__' +
+          '&px_v=fc2a508' +
           '&cv_id=GTM-TEST123' +
           '&cv_v=1' +
           '&cv_env=' +
