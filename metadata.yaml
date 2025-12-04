@@ -16,6 +16,9 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root
 versions:
   # Latest version
+  - sha: __GIT_SHA__
+    changeNotes: Changed session cookie to browser session-based (expires on browser close instead of 30-minute sliding window)
+  # Older versions
   - sha: fc2a5089e03a41d94b29a48305fb4f1e8eb1cbae
     changeNotes: |2
       1. Renamed pixel version parameter (v → px_v) with automatic version injection via GitHub Actions
@@ -25,7 +28,6 @@ versions:
       5. Refactored pixel code for clarity and simplicity
       6. Refactored and expanded test coverage
       7. Added CI check to ensure pixel.js matches template.tpl
-  # Older versions
   - sha: 658b70185420c533ce0e9e3da5112975e195a158
     changeNotes: Added registration event type
   - sha: a437825d563b120bde8ec7c8d068ea8c4de4c265
