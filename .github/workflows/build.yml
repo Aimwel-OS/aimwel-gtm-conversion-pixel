@@ -7,6 +7,17 @@ on:
     branches: [main]
 
 jobs:
+  validate-pixel-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check pixel.js matches template.tpl
+        run: |
+          sed -n '/^___SANDBOXED_JS_FOR_WEB_TEMPLATE___$/,/^___WEB_PERMISSIONS___$/{ /^___/d; p; }' template.tpl | sed '/^$/d' > /tmp/template_js.txt
+          sed '/^$/d' pixel.js > /tmp/pixel_js.txt
+          diff /tmp/pixel_js.txt /tmp/template_js.txt
+
   validate-placeholder:
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +28,7 @@ jobs:
 
   inject-version:
     runs-on: ubuntu-latest
-    needs: validate-placeholder
+    needs: [validate-pixel-sync, validate-placeholder]
     if: github.event_name == 'push'
     permissions:
       contents: write
