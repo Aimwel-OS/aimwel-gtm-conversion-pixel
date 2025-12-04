@@ -343,7 +343,9 @@ function buildUrl() {
         '&session_id=' + sessionId +
         '&event_type=' + eventType +
         '&px_v=' + PIXEL_VERSION +
+        '&cv_id=' + cv.containerId +
         '&cv_v=' + cv.version +
+        '&cv_env=' + (cv.environmentName || '') +
         '&cv_dm=' + cv.debugMode +
         '&cv_pm=' + cv.previewMode +
         '&attr_window=' + attrDays +
@@ -1326,7 +1328,7 @@ scenarios:
 
     assertApi('gtmOnSuccess').wasCalled();
     assertApi('sendPixel').wasCalled();
-setup: |-
+setup: |
   // Shared test setup for GTM template tests
 
   const logToConsole = require("logToConsole");
@@ -1402,7 +1404,9 @@ setup: |-
       mock('generateRandom', function() { return 1234; });
       mock('getContainerVersion', function() {
           return {
+              containerId: 'GTM-TEST123',
               version: '1',
+              environmentName: '',
               debugMode: false,
               previewMode: false
           };
@@ -1457,7 +1461,9 @@ setup: |-
           '&session_id=' + sessionId +
           '&event_type=' + eventType +
           '&px_v=__GIT_SHA__' +
+          '&cv_id=GTM-TEST123' +
           '&cv_v=1' +
+          '&cv_env=' +
           '&cv_dm=false' +
           '&cv_pm=false' +
           '&attr_window=' + attrWindow +
