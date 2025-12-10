@@ -226,7 +226,7 @@ const getContainerVersion = require('getContainerVersion');
 
 
 // Constants
-const PIXEL_VERSION = 'f6fa068';
+const PIXEL_VERSION = 'f8416c2';
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
 const GA_COOKIE = '_ga';

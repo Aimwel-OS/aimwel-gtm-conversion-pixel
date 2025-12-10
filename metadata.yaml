@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root
 versions:
   # Latest version
-  - sha: f6fa068988684bd1af9da91bf06ad8e5c9879253
+  - sha: f8416c27504597675f5eb0f05959fd4e3abfe0dc
     changeNotes: Updated CI workflow for two-pass SHA injection to ensure referenced commits have valid metadata
   # Older versions
   - sha: d20d8c00d1633eefba35fa22f916bf4c214da811
