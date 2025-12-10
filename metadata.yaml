@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root
 versions:
   # Latest version
-  - sha: 7d96cc32338ec2fc76a67920568b767ba4d61557
+  - sha: 7a02446a09dd29935779788a3d0c13fa5e5f6011
     changeNotes: Added explicit cookie permissions for _aimwel_session and _aimwel_params cookies
   # Older versions
   - sha: f8416c27504597675f5eb0f05959fd4e3abfe0dc
