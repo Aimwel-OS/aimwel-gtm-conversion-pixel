@@ -37,15 +37,31 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref }}
 
-      - name: Inject version
-        run: |
-          sed -i "s/__GIT_SHA__/${GITHUB_SHA::7}/g" template.tpl
-          sed -i "s/__GIT_SHA__/${GITHUB_SHA}/g" metadata.yaml
-
-      - name: Commit and push
+      - name: Inject version (two-pass)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
+          # First pass: Replace __GIT_SHA__ with the triggering commit SHA
+          TRIGGER_SHA_SHORT=${GITHUB_SHA::7}
+          TRIGGER_SHA_FULL=${GITHUB_SHA}
+
+          sed -i "s/__GIT_SHA__/${TRIGGER_SHA_SHORT}/g" template.tpl
+          sed -i "s/__GIT_SHA__/${TRIGGER_SHA_FULL}/g" metadata.yaml
+
           git add template.tpl metadata.yaml
-          git commit -m "Inject version ${GITHUB_SHA::7} [ci skip]"
+          git commit -m "Inject version ${TRIGGER_SHA_SHORT} [ci skip]"
+
+          # Get the SHA of the commit we just created
+          FIRST_COMMIT_SHA=$(git rev-parse HEAD)
+          FIRST_COMMIT_SHA_SHORT=${FIRST_COMMIT_SHA::7}
+
+          # Second pass: Replace the trigger SHA with the first commit SHA
+          # This makes the latest commit point to a commit with valid metadata
+          sed -i "s/${TRIGGER_SHA_SHORT}/${FIRST_COMMIT_SHA_SHORT}/g" template.tpl
+          sed -i "s/${TRIGGER_SHA_FULL}/${FIRST_COMMIT_SHA}/g" metadata.yaml
+
+          git add template.tpl metadata.yaml
+          git commit -m "Inject version ${FIRST_COMMIT_SHA_SHORT} [ci skip]"
+
           git push
