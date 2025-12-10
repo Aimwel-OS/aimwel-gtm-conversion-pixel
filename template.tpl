@@ -1,4 +1,4 @@
-___INFO___
+﻿___INFO___
 
 {
   "type": "TAG",
@@ -226,7 +226,7 @@ const getContainerVersion = require('getContainerVersion');
 
 
 // Constants
-const PIXEL_VERSION = 'f8416c2';
+const PIXEL_VERSION = '__GIT_SHA__';
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
 const GA_COOKIE = '_ga';
@@ -555,7 +555,54 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
+                    "string": "_aimwel_session"
+                  },
+                  {
+                    "type": 1,
                     "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "any"
+                  },
+                  {
+                    "type": 1,
+                    "string": "any"
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "name"
+                  },
+                  {
+                    "type": 1,
+                    "string": "domain"
+                  },
+                  {
+                    "type": 1,
+                    "string": "path"
+                  },
+                  {
+                    "type": 1,
+                    "string": "secure"
+                  },
+                  {
+                    "type": 1,
+                    "string": "session"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_aimwel_params"
                   },
                   {
                     "type": 1,
@@ -1327,7 +1374,7 @@ scenarios:
 
     assertApi('gtmOnSuccess').wasCalled();
     assertApi('sendPixel').wasCalled();
-setup: |
+setup: |-
   // Shared test setup for GTM template tests
 
   const logToConsole = require("logToConsole");
@@ -1458,7 +1505,7 @@ setup: |
           '?timestamp=1000' +
           '&session_id=' + sessionId +
           '&event_type=' + eventType +
-          '&px_v=d20d8c0' +
+          '&px_v=__GIT_SHA__' +
           '&cv_id=GTM-TEST123' +
           '&cv_v=1' +
           '&cv_env=' +
