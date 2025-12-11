@@ -16,9 +16,11 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root
 versions:
   # Latest version
+  - sha: __GIT_SHA__
+    changeNotes: Added Google Tag Manager Community Template Gallery Terms of Service agreement
+  # Older versions
   - sha: 7a02446a09dd29935779788a3d0c13fa5e5f6011
     changeNotes: Added explicit cookie permissions for _aimwel_session and _aimwel_params cookies
-  # Older versions
   - sha: f8416c27504597675f5eb0f05959fd4e3abfe0dc
     changeNotes: Updated CI workflow for two-pass SHA injection to ensure referenced commits have valid metadata
   - sha: d20d8c00d1633eefba35fa22f916bf4c214da811
