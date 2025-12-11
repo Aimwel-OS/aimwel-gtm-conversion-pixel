@@ -16,7 +16,7 @@ homepage: "https://www.aimwel.com"
 documentation: See "README.md" in project root
 versions:
   # Latest version
-  - sha: __GIT_SHA__
+  - sha: 30cd2953c90fa00f539b4056f90737995c5dd635
     changeNotes: Added Google Tag Manager Community Template Gallery Terms of Service agreement
   # Older versions
   - sha: 7a02446a09dd29935779788a3d0c13fa5e5f6011
