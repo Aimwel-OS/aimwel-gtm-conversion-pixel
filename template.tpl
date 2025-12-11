@@ -1,4 +1,12 @@
-﻿___INFO___
+﻿___TERMS_OF_SERVICE___
+
+By creating or modifying this file you agree to Google Tag Manager's Community
+Template Gallery Developer Terms of Service available at
+https://developers.google.com/tag-manager/gallery-tos (or such other URL as
+Google may provide), as modified from time to time.
+
+
+___INFO___
 
 {
   "type": "TAG",
@@ -226,7 +234,7 @@ const getContainerVersion = require('getContainerVersion');
 
 
 // Constants
-const PIXEL_VERSION = '7a02446';
+const PIXEL_VERSION = '__GIT_SHA__';
 const SESSION_COOKIE = '_aimwel_session';
 const PARAMS_COOKIE = '_aimwel_params';
 const GA_COOKIE = '_ga';
@@ -1505,7 +1513,7 @@ setup: |-
           '?timestamp=1000' +
           '&session_id=' + sessionId +
           '&event_type=' + eventType +
-          '&px_v=7a02446' +
+          '&px_v=__GIT_SHA__' +
           '&cv_id=GTM-TEST123' +
           '&cv_v=1' +
           '&cv_env=' +
